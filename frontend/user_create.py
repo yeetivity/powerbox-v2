@@ -11,30 +11,62 @@ class UserCreate(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent, bg=style.CLR_BACKGROUND)
     
-        for_measurement = controller.options['for_measurement']
-        creating = controller.options['creating']
+        self.controller = controller
+        self.for_measurement = controller.options['for_measurement']
+        self.creating = controller.options['creating']
+        self.n_users = controller.options['n_users']
+
+        self.name_vars = [None, None]
+        self.sport_vars = [None, None]
+        self.gender_vars = [None, None]
+        self.height_vars = [None, None]
+        self.weight_vars = [None, None]
+        self.pushheight_vars = [None, None]
                 
-        self.populate_UI(for_measurement, creating)
-        self.configure_UI(creating)
+        self.populate_UI()
         return
     
     def back(self):
+        self.controller.back()
         print('back')
         return
 
     def finish(self):
-        print('save')
-        return
+        if self.creating:
+            # This can only have one user
+            # Get the userdetails from tab 1
+            name, sport, gender, height = (e.get() for e in (
+            self.name_entries[0], self.sport_vars[0], self.gender_vars[0], self.height_entries[0]))
 
-    def sportmenu_callback(self, choice):
-        print(choice)
-        return
+            # Send userdetails to database
+            userID = self.controller.user_to_database((name, sport, gender, height))
 
-    def genderbutton_callback(self, choice):
-        print(choice)
-        return
+            # Get sessiondetails
+            if self.for_measurement:
+                weight, push_height = (e.get() for e in (self.weight_entries[0], self.pushheight_entries[0]))
 
-    def populate_UI(self, for_measurement, creating):
+                # Send userdetails to models
+                self.controller.userIDs_to_models((userID, None))
+                
+                # Send sessiondetails to models          
+                self.controller.sessiondetails_to_models(([weight, push_height], None))
+                self.controller.start_measurement()
+                return
+            else:
+                self.controller.home()
+                return
+
+        elif self.for_measurement and not self.creating:
+            # This can have two users
+            sessiondetails = [None, None]
+            for i in range(self.n_users):
+                weight, push_height = (e.get() for e in (self.weight_entries[i], self.pushheight_entries[i]))
+                sessiondetails[i] = [weight, push_height]
+
+            self.controller.sessiondetails_to_models(sessiondetails)
+            return   
+
+    def populate_UI(self):
         # ------------------
         #   IMAGES USED
         # ------------------
@@ -69,19 +101,37 @@ class UserCreate(tk.Frame):
         # ------------------
         mid_frame = ctk.CTkFrame(self, 
                               width=500,
-                              height=370,
+                              height=390,
                               fg_color=style.CLR_BACKGROUND_ALT)
         mid_frame.place(x=150, y=76)
-        mid_frame.grid_propagate(False)
 
+        # Create tab view
+        tab_view = ctk.CTkTabview(master=mid_frame,
+                                  width=496,
+                                  height=386,
+                                  fg_color=style.CLR_BACKGROUND_ALT)
+        tab_view.place(x=2, y=2)
+        tab_view.grid_propagate(False)
+        tab_view.add('User 1')
+        self.fill_tabview(tab_view.tab('User 1'), 0)
+
+        if self.for_measurement and self.n_users == 2:
+            tab_view.add('User 2')
+            self.fill_tabview(tab_view.tab('User 2'), 1)
+
+        tab_view.set('User 1')
+        
+        return   
+
+    def fill_tabview(self, tab, i):
         # Title
-        if creating:
+        if self.creating:
             title_txt = "Create your profile"
         else:
             title_txt = "Your profile"
-        frame_title = ctk.CTkLabel(master=mid_frame,
+        frame_title = ctk.CTkLabel(master=tab,
                                    text=title_txt,
-                                   font=style.FNT_H4,
+                                   font=style.FNT_H5,
                                    width=400,
                                    height=32,
                                    bg_color=style.CLR_BACKGROUND_ALT
@@ -89,14 +139,16 @@ class UserCreate(tk.Frame):
         frame_title.grid(row=0, column=0, columnspan=5, ipady=8)
 
         # Row Spacer
-        spacer = ctk.CTkLabel(master=mid_frame,
+        spacer = ctk.CTkLabel(master=tab,
                               text="",
-                              height=14)
+                              height=4)
         spacer.grid(row=1, column=0, columnspan=5)
 
         # Name input
-        self.name_entry = ctk.CTkEntry(master=mid_frame,
+        self.name_vars[i] = ctk.StringVar()
+        self.name_entry = ctk.CTkEntry(master=tab,
                                        placeholder_text="Insert your name",
+                                       textvariable=self.name_vars[i],
                                        width=400,
                                        height=32,
                                        border_width=2,
@@ -106,14 +158,13 @@ class UserCreate(tk.Frame):
         self.name_entry.grid(row=2, column=0, columnspan=5, padx=50, pady=4, sticky='ew')
 
         # Sport input
-        self.sportmenu_var = ctk.StringVar(value="Choosing...")
-        self.sportmenu = ctk.CTkOptionMenu(master=mid_frame,
+        self.sport_vars[i] = ctk.StringVar(value="Choosing...")
+        self.sportmenu = ctk.CTkOptionMenu(master=tab,
                                            values=appsettings.SPORTS,
-                                           command=self.sportmenu_callback,
                                            width=400,
                                            height=32,
                                            corner_radius=10,
-                                           variable=self.sportmenu_var,
+                                           variable=self.sport_vars[i],
                                            fg_color=style.CLR_PRIMARY,
                                            text_color=style.CLR_WHITE,
                                            button_color=style.CLR_SECONDARY,
@@ -124,11 +175,10 @@ class UserCreate(tk.Frame):
         self.sportmenu.grid(row=3, column=0, columnspan=5, padx=50, pady=4, sticky='ew')
 
         # Gender input
-        genderbutton_var = ctk.StringVar(value="Male")
-        self.genderbutton = ctk.CTkSegmentedButton(master=mid_frame,
+        self.gender_vars[i] = ctk.StringVar(value="None")
+        self.genderbutton = ctk.CTkSegmentedButton(master=tab,
                                               values=appsettings.GENDERS,
-                                              variable=genderbutton_var,
-                                              command=self.genderbutton_callback,
+                                              variable=self.gender_vars[i],
                                               height=32,
                                               corner_radius=10,
                                               fg_color=style.CLR_PRIMARY,
@@ -138,77 +188,98 @@ class UserCreate(tk.Frame):
                                               selected_hover_color=style.CLR_ACCENT_DARKENED)
         self.genderbutton.grid(row=4, column=0, columnspan=5, sticky='ew', pady=4, padx=(50,50))
 
-        # Length input
-        self.length_entry = ctk.CTkEntry(master=mid_frame,
-                                        placeholder_text="Insert length",
+        # height input
+        self.height_vars[i] = ctk.StringVar()
+        self.height_entry = ctk.CTkEntry(master=tab,
+                                        placeholder_text="Insert height",
+                                        textvariable= self.height_vars[i],
                                         height=32,
                                         border_width=2,
                                         corner_radius=10,
                                         border_color=style.CLR_PRIMARY,
                                         font=style.FNT_BODY)
-        self.length_entry.grid(row=5, column=0, columnspan=4, padx=(50,4), pady=4, sticky='ew')    
+        self.height_entry.grid(row=5, column=0, columnspan=4, padx=(50,4), pady=4, sticky='ew')    
 
-        # Length unit
-        length_unit = ctk.CTkLabel(master=mid_frame,
+        # height unit
+        height_unit = ctk.CTkLabel(master=tab,
                                    text="cm",
                                    height=32,
                                    anchor='w',
                                    font=style.FNT_BODY)
-        length_unit.grid(row=5, column=4, padx=(0,50), ipadx=6, sticky='ew')
+        height_unit.grid(row=5, column=4, padx=(0,50), ipadx=6, sticky='ew')
 
-        if for_measurement:
+        if self.for_measurement:
             # Row Spacer
-            spacer2 = ctk.CTkLabel(master=mid_frame,
+            spacer2 = ctk.CTkLabel(master=tab,
                                 text="",
                                 height=28)
             spacer2.grid(row=6, column=0, columnspan=5)
 
             # Weight input
-            self.weight_entry = ctk.CTkEntry(master=mid_frame,
+            self.weight_vars[i] = ctk.StringVar()
+            weight_entry = ctk.CTkEntry(master=tab,
                                             placeholder_text="Insert current weight",
+                                            textvariable=self.weight_vars[i],
                                             height=32,
                                             border_width=2,
                                             corner_radius=10,
                                             border_color=style.CLR_ACCENT,
                                             font=style.FNT_BODY)
-            self.weight_entry.grid(row=7, column=0, columnspan=4, padx=(50,4), pady=4, sticky='ew')    
+            weight_entry.grid(row=7, column=0, columnspan=4, padx=(50,4), pady=4, sticky='ew')    
 
             # Weight unit
-            weight_unit = ctk.CTkLabel(master=mid_frame,
+            weight_unit = ctk.CTkLabel(master=tab,
                                     text="kg",
                                     height=32,
                                     anchor='w',
                                     font=style.FNT_BODY)
             weight_unit.grid(row=7, column=4, padx=(0,50), ipadx=6, sticky='ew')
 
-            # Pushheight input
-            self.pushheight_entry = ctk.CTkEntry(master=mid_frame,
+            # Pushheight input #Todo: make a validation command
+            self.pushheight_vars[i] = ctk.StringVar()
+            pushheight_entry = ctk.CTkEntry(master=tab,
                                             placeholder_text="Insert pushheight",
+                                            textvariable=self.pushheight_vars[i],
                                             height=32,
                                             border_width=2,
                                             corner_radius=10,
                                             border_color=style.CLR_ACCENT,
                                             font=style.FNT_BODY)
-            self.pushheight_entry.grid(row=8, column=0, columnspan=4, padx=(50,4), pady=4, sticky='ew')    
+            pushheight_entry.grid(row=8, column=0, columnspan=4, padx=(50,4), pady=4, sticky='ew')    
 
             # Pushheight unit
-            pushheight_unit = ctk.CTkLabel(master=mid_frame,
-                                    text="kg",
+            pushheight_unit = ctk.CTkLabel(master=tab,
+                                    text="cm",
                                     height=32,
                                     anchor='w',
                                     font=style.FNT_BODY)
             pushheight_unit.grid(row=8, column=4, padx=(0,50), ipadx=6, sticky='ew')
 
-        return   
-
-    def configure_UI(self, creating):
-        if not creating:
-            # self.controller.get_user_details()
-            # todo: prefill everything
-            # todo: disabled color fix
-            
-            # Disable inputs
-            self.name_entry.configure(state='disabled')
+    def configure_UI(self, userdetails, last_sessiondetails=None):
+        #Todo: get model information and fill it in.
+        for i in range(len(userdetails)):
+            # Sport choice
             self.sportmenu.configure(state='disabled')
+            self.sport_vars[i].set(userdetails[i]['sport'])
+            
+            # Gender choice
             self.genderbutton.configure(state='disabled')
-            self.length_entry.configure(state='disabled')
+            self.gender_vars[i].set(value=userdetails[i]['gender'])
+            
+            # Name
+            self.name_entry.configure(state='disabled')
+            self.name_vars[i].set(value=userdetails[i]['name'])
+        
+            # Height
+            self.height_entry.configure(state='disabled')
+            self.height_vars[i].set(value=userdetails[i]['height'])
+            
+            if last_sessiondetails is not None and last_sessiondetails[i] is not None:
+                self.weight_vars[i].set(last_sessiondetails[i][0])
+                self.pushheight_vars[i].set(last_sessiondetails[i][0])
+            else:
+                #Todo: findout why placeholder doesn't work
+                self.weight_vars[i].set("Enter weight")
+                self.pushheight_vars[i].set("Enter pushheight")
+                print('No last value was found')
+                #Todo: see if I want to create a default value here

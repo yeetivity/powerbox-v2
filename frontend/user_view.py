@@ -3,23 +3,17 @@ import customtkinter as ctk
 
 from PIL.Image import open as OpenImage
 
+from CTkMessagebox import CTkMessagebox
+
 from settings import StyleElements as style
 from settings import Paths as paths
 from settings import ApplicationSettings as appsettings
 
 class UserView(tk.Frame):
-    def __init__(self, parent, controller, pbs=None, results=None):
+    def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent, bg=style.CLR_BACKGROUND)
-                
-        #Todo: replace placeholders
-        self.name = "John Doe"
-        self.gender = "Male"
-        self.height = "167.0 cm"
-        self.sport = "Greco-Roman wrestling"
-        
-        self.peakforce = "42 N"
-        self.meanforce = "42 N"
-        self.fatigue = "42 %"
+                        
+        self.resultIDs = {}
         
         self.populate_UI()
         return
@@ -29,17 +23,33 @@ class UserView(tk.Frame):
         return
 
     def edit(self):
-        print('edit')
+        print('connecting sensor feature not functional yet')
+        msg = CTkMessagebox(title="Feature not found", 
+                            message="This functionality is still under construction",
+                            icon='warning',
+                            option_1='OK')
         return
    
     def item_selected(self, event):
         # get selected index
         selected_index = self.resultlist.curselection()
-        # get item
-        selected_item = self.resultlist.get(selected_index)
+        # get corresponding resultID
+        resultID = self.resultIDs[self.resultlist.get(selected_index)]
         
-        # Todo: send to controller
-        print('selected a result')
+        self.controller.goto_result(self, resultID)
+        return
+
+    def update_resultlist(self, results):
+        # Clear current userlist
+        self.resultlist.delete(0, tk.END)
+
+        # Add results to listbox
+        for result in results:
+            info = f" {result[4]}"
+            self.resultlist.insert(tk.END, info)
+            self.resultIDs[info] = result[0]
+
+        print('Users inserted into userlist')
         return
 
     def populate_UI(self):
@@ -97,8 +107,9 @@ class UserView(tk.Frame):
                                  anchor='w')
         name_desc.grid(row=0, column=0, padx=(16,0), pady=(2,0), sticky='ew')
         
+        self.name_var = ctk.StringVar()
         name = ctk.CTkLabel(master=block1,
-                                 text=self.name,
+                                 textvariable=self.name_var,
                                  font=style.FNT_BODY,
                                  anchor='w',
                                  fg_color=style.CLR_PRIMARY,
@@ -113,8 +124,9 @@ class UserView(tk.Frame):
                                  anchor='w')
         gender_desc.grid(row=1, column=0, padx=(16,0), sticky='ew')
         
+        self.gender_var = ctk.StringVar()
         gender = ctk.CTkLabel(master=block1,
-                                 text=self.gender,
+                                 textvariable=self.gender_var,
                                  font=style.FNT_BODY,
                                  anchor='w',
                                  fg_color=style.CLR_PRIMARY,
@@ -129,8 +141,9 @@ class UserView(tk.Frame):
                                  anchor='w')
         height_desc.grid(row=2, column=0, padx=(16,0), sticky='ew')
         
+        self.height_var = ctk.StringVar()
         height = ctk.CTkLabel(master=block1,
-                                 text=self.height,
+                                 textvariable=self.height_var,
                                  font=style.FNT_BODY,
                                  anchor='w',
                                  fg_color=style.CLR_PRIMARY,
@@ -145,8 +158,9 @@ class UserView(tk.Frame):
                                  anchor='w')
         sport_desc.grid(row=3, column=0, padx=(16,0), sticky='ew')
         
+        self.sport_var = ctk.StringVar()
         sport = ctk.CTkLabel(master=block1,
-                                 text=self.sport,
+                                 textvariable=self.sport_var,
                                  font=style.FNT_BODY,
                                  anchor='w',
                                  fg_color=style.CLR_PRIMARY,
@@ -180,8 +194,9 @@ class UserView(tk.Frame):
                                  fg_color=style.CLR_ACCENT_DARKENED)
         pf_desc.grid(row=0, column=0, padx=(16,0), pady=(2,0), sticky='ew')
         
+        self.pf_var = ctk.StringVar()
         pf = ctk.CTkLabel(master=block2,
-                                 text=self.peakforce,
+                                 textvariable=self.pf_var,
                                  font=style.FNT_H5,
                                  fg_color=style.CLR_ACCENT_DARKENED,
                                  text_color=style.CLR_WHITE)
@@ -194,8 +209,9 @@ class UserView(tk.Frame):
                                  fg_color=style.CLR_ACCENT_DARKENED)
         mf_desc.grid(row=0, column=1, padx=(4,0), pady=(2,0), sticky='ew')
         
+        self.mf_var = ctk.StringVar()
         mf = ctk.CTkLabel(master=block2,
-                                 text=self.meanforce,
+                                 textvariable=self.mf_var,
                                  font=style.FNT_H5,
                                  fg_color=style.CLR_ACCENT_DARKENED,
                                  text_color=style.CLR_WHITE)
@@ -208,8 +224,9 @@ class UserView(tk.Frame):
                                  fg_color=style.CLR_ACCENT_DARKENED)
         fat_desc.grid(row=0, column=2, padx=(4,16), pady=(2,0), sticky='ew')
         
+        self.fat_var = ctk.StringVar()
         fat = ctk.CTkLabel(master=block2,
-                                 text=self.fatigue,
+                                 textvariable=self.fat_var,
                                  font=style.FNT_H5,
                                  fg_color=style.CLR_ACCENT_DARKENED,
                                  text_color=style.CLR_WHITE)
@@ -222,12 +239,20 @@ class UserView(tk.Frame):
         # ----------------------
         #   RESULTS
         # ----------------------
-        block_title2 = ctk.CTkLabel(master=self,
+        block_title3 = ctk.CTkLabel(master=self,
                                     text="RESULTS",
                                     font=style.FNT_OVERLINE,
                                     fg_color=style.CLR_BACKGROUND,
                                     text_color=style.CLR_WHITE)
-        block_title2.place(x=150, y=245+64, anchor='sw')
+        block_title3.place(x=150, y=245+64, anchor='sw')
+
+        # No item selected_title
+        self.listbox_info_txt = ctk.CTkLabel(master=self,
+                                   text="NO RESULTS FOUND",
+                                   font=style.FNT_OVERLINE,
+                                   fg_color=style.CLR_BACKGROUND,
+                                   text_color=style.CLR_BACKGROUND)
+        self.listbox_info_txt.place(x=250, y=245+64, anchor='sw')
 
         self.selected_item = tk.Variable()
         scrollbar = tk.Scrollbar(self, bg=style.CLR_BACKGROUND, width=20)
@@ -241,3 +266,24 @@ class UserView(tk.Frame):
         scrollbar.config(command = self.resultlist.yview)
         
         return   
+
+    def display_user(self, userInfo):
+        self.name_var.set(userInfo[0][1] + " " + userInfo[0][2])
+        self.sport_var.set(userInfo[0][3])
+        self.gender_var.set(userInfo[0][4])
+        self.height_var.set(str(userInfo[0][5]))
+        
+        if len(userInfo[2]) == 0:
+            # No results, so no personal bests either
+            self.pf_var.set(" - ")
+            self.mf_var.set(" - ")
+            self.fat_var.set(" - ")
+            self.listbox_info_txt.configure(text_color=style.CLR_RED)
+        else:
+            self.pf_var.set(userInfo[1][1])
+            self.mf_var.set(userInfo[1][2])
+            self.fat_var.set(userInfo[1][9])
+            self.update_resultlist(userInfo[2])
+        
+         
+        

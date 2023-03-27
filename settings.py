@@ -80,6 +80,7 @@ class Paths():
     PATH_IC_NEWUSER = PATH_IMAGE_FOLDER + "ic_newuser.png"
     PATH_IC_USESELECTED = PATH_IMAGE_FOLDER + "ic_useselected.png"
     PATH_IC_EDITUSER = PATH_IMAGE_FOLDER + "ic_edituser.png"
+    PATH_IC_CREATEUSER = PATH_IMAGE_FOLDER + "ic_createuser.png"
     PATH_LOGO_PB_BIG = PATH_IMAGE_FOLDER + "Logo_Big.png"
     PATH_LOGO_PB_SMALL = PATH_IMAGE_FOLDER + "Logo_Small.png"
     PATH_LOGO_RF_SMALL = PATH_IMAGE_FOLDER + "rf_logo.png"

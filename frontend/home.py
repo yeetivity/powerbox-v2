@@ -19,7 +19,11 @@ class Home(tk.Frame):
         return
 
     def connect_sensor(self):
-        print('yow')
+        print('connecting sensor feature not functional yet')
+        msg = CTkMessagebox(title="Feature not found", 
+                            message="This functionality is still under construction",
+                            icon='warning',
+                            option_1='OK')
         return
     
     def switch_usernr(self):
@@ -33,15 +37,29 @@ class Home(tk.Frame):
         return
     
     def goto_userresults(self):
-        print('goto userresults')
+        self.controller.options['for_measurement'] = False
+        self.controller.goto_userselect()
+        print('path to userresults started')
         return
 
+    def create_user(self):
+        self.controller.options['creating'] = True
+        self.controller.options['for_measurement'] = False
+        self.controller.goto_usercreate()
+        print('path to creating user without measurement started')
+
     def quickstart(self):
-        print('quickstart')
+        self.controller.options['start_mode'] = 0  # Start mode for quick start
+        self.controller.options['for_measurement'] = True  # Tell controller we want to measure
+        self.controller.goto_dataview()
+        print('quickstart initiated')
         return
     
     def start(self):
-        print('start')
+        self.controller.options['start_mode'] = 1  # Start mode for normal start
+        self.controller.options['for_measurement'] = True  # Tell controller we want to measure
+        self.controller.goto_userselect()
+        print('normal start procedure initiated')
         return
 
     def populate_UI(self):
@@ -55,6 +73,7 @@ class Home(tk.Frame):
         IC_QUICKSTART = ctk.CTkImage(OpenImage(paths.PATH_IC_QUICKSTART), size=(180,186))
         IC_START = ctk.CTkImage(OpenImage(paths.PATH_IC_START), size=(150,186))
         IC_FINDUSERS = ctk.CTkImage(OpenImage(paths.PATH_IC_FINDUSERS), size=(83,72))
+        IC_CREATEUSER = ctk.CTkImage(OpenImage(paths.PATH_IC_CREATEUSER), size=(60,72))
         LOGO_PB_SMALL = ctk.CTkImage(light_image=OpenImage(paths.PATH_LOGO_PB_SMALL),
                                      dark_image=OpenImage(paths.PATH_LOGO_PB_SMALL),
                                      size=(222,24))
@@ -82,6 +101,19 @@ class Home(tk.Frame):
                                           image=self.IC_SINGLEUSER)
         self.btn_switch_usernr.place(x=86, y=18)
         
+        if self.controller.options['n_users'] == 2:
+            self.btn_switch_usernr.configure(image=self.IC_DOUBLEUSER)
+        
+        btn_create_user = ctk.CTkButton(master=self,
+                                        width=60,
+                                        height=72,
+                                        text='',
+                                        bg_color=style.CLR_BACKGROUND,
+                                        fg_color=style.CLR_BACKGROUND,
+                                        command=self.create_user,
+                                        image=IC_CREATEUSER)
+        btn_create_user.place(x=610, y=18)
+
         btn_user_results = ctk.CTkButton(master=self,
                                           width=83,
                                           height=72,
