@@ -17,7 +17,7 @@ class Database():
         self.conn = None
         try:
             # Create connection
-            self.conn = sqlite3.connect(db)
+            self.conn = sqlite3.connect(db, check_same_thread=False)
             logging.info("Successfully connected to database using SQLite version: %s", sqlite3.version)
 
             # Create a cursor (allows to execution of SQL statements)
@@ -130,6 +130,16 @@ class Database():
             return None
         
         return result
+    
+    def get_result(self, rsltID):
+        """ Function to get a specific result with a resultID """
+        self.cur.execute("SELECT * FROM results WHERE ResultID=?", (rsltID,))
+        result = self.cur.fetchone()
+        return result
+
+    def get_lastresult(self, usrID):
+        """ Method that gets the last resultID of a user"""
+        return self.get_userresults(usrID)[-1]
     
     def get_userpbs(self, usrID):
         query = "SELECT * FROM pbs WHERE userID = ?"

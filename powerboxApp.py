@@ -12,10 +12,13 @@ import customtkinter as ctk
 # Functionality imports
 from collections.abc import MutableMapping
 import copy
+import threading as t
+import csv
 
 # Frontend imports
 import frontend.home
 import frontend.result_view
+from frontend.result_view import ResultView
 import frontend.data_view
 import frontend.user_view
 import frontend.user_create
@@ -40,6 +43,9 @@ class powerboxApplication(ctk.CTk):
 
         # Initialisations      
         self.db = Database(Paths.PATH_DATABASE)
+        self.email_generator = EmailGenerator()
+        self.analyser = DataAnalyser()
+        self.pdf_generator = PDFGenerator()
 
         self.fstack = []  # Stack of loaded frames
         self.options = OptionDict({'n_users': 1, 
@@ -148,14 +154,33 @@ class powerboxApplication(ctk.CTk):
         
         userinfo = (userdetails, personalbests, userresults)
         
+        # Write the user details to the model
+        self.models[0].set_userdetails(userdetails)
+        
         # Add the user to the screen
         self.fstack[-1].display_user(userinfo)
         print('goto_userview')
 
-    def goto_result(self, resultID):
-        # Fetch results for resultID and store them to temp storage
-        # Todo: do something
-        # Show resultview
+    def goto_result(self, resultID=None):
+        # NOTE: This class can only take one result
+        if self.options['for_measurement']:
+            pass
+            # Get rawdata from the data_reader class
+            # Convert the data to one or two person data
+            # Write the data to the models
+            # Send the models to the data analyser for analysis -> writes analysis and comparison to the model
+            # Send the required data to the pdf creator -> saves the report to temporary storage
+            # Save the models
+            # If n_users != 2
+            # Show result view
+            # Else: show a messagebox that results can be viewed from the user profile
+        else:
+            # Get session details from db and send them to model
+            self.sessiondetails_to_models(self.get_result(resultID=resultID))
+            self.models[0].load_data_from_csv()
+            analysis_thread = t.Thread(target=self.start_comparison, args=(self.models[0],))
+            analysis_thread.start()
+        
         self.show(frontend.result_view.ResultView)
         print('goto_results')
 
@@ -167,6 +192,9 @@ class powerboxApplication(ctk.CTk):
     def get_users(self, filter1=None, filter2=None):
         return self.db.get_users(filter1, filter2)
     
+    def get_result(self, resultID):
+        return self.db.get_result(resultID)
+
     def userIDs_to_models(self, userIDs):
         # Get the user from the db and write to the model
         for i  in range(self.options['n_users']):
@@ -180,11 +208,49 @@ class powerboxApplication(ctk.CTk):
         return userID
 
     def sessiondetails_to_models(self, sessiondetails):
-        # Save sessiondetails to models
-        print('sessiondetails sent to database and model')
-            
-            
+        #Todo: see how to handle souble users
+        self.models[0].set_sessiondetails(sessiondetails)
+    
+    def start_comparison(self, model):
+        #Note: run in thread
+        # Get last analysed data
+        analysedpath = Paths.PATH_ANALYSEDDATA + str(model.sessiondetails['resultID']) + '.csv'
+        with open(analysedpath) as f1:
+            file1 = list(csv.DictReader(f1))
+            last_result = {k: float(col[k]) for k in file1[0].keys() for col in file1}
         
+        # Get personal bests
+        pbs = self.db.get_userpbs(model.userdetails['userID'])
+        
+        # Create comparison
+        comparison = self.analyser.compare_data(model.analyseddata, last_result, pbs)
+        
+        # Write to model
+        model.compareddata = comparison
+
+        # Create pdf
+        self.pdf_generator.create_pdf(model)
+        
+        # Update resultview (first check if we are seeing resultview)
+        if isinstance(self.fstack[-1], ResultView):
+            self.fstack[-1].update_pdf()
+            
+    def send_email(self, receiver):
+        username, date, resultID = self.models[0].get_details_for_email()
+
+        email_thread = t.Thread(target=self.compose_email, args=(receiver, username, date, resultID))
+        email_thread.start()
+        return
+
+    def compose_email(self, receiver, name, date, ID):
+        # Generate and send email
+        sent = self.email_generator.send_email(receiver_adress=receiver, username=name, date=date, resultID=ID)
+        # Update UI if sucessful
+        if sent and isinstance(self.fstack[-1], ResultView):
+            # If the last frame is still the resultview; show that email is sent
+            self.fstack[-1].email_sent()
+        elif isinstance(self.fstack[-1], ResultView):
+            self.fstack[-1].email_error()
     
 class OptionDict(MutableMapping):
     def __init__(self, *args, **kwargs):

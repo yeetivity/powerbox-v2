@@ -19,18 +19,18 @@ class ResultView(tk.Frame):
         return
 
     def export(self):
-        email = askstring(prompt="At what emailadress would you like to receive your results?", 
+        #Todo: create email functionality 
+        receiver = askstring(prompt="At what emailadress would you like to receive your results?", 
                           title="Please input your emailadress")
-        ctk.set_appearance_mode('dark')
-        if email is not None:
-            wait_txt = ctk.CTkLabel(master=self,
+        if receiver is not None:
+            self.wait_txt = ctk.CTkLabel(master=self,
                                     text="Processing your report...",
                                     text_color=style.CLR_ACCENT,
                                     font=style.FNT_OVERLINE_IT,
                                     anchor='n')
-            wait_txt.place(x=400, y=23, anchor='n')
+            self.wait_txt.place(x=400, y=23, anchor='n')
             
-            wait_bar = ctk.CTkProgressBar(master=self,
+            self.wait_bar = ctk.CTkProgressBar(master=self,
                                             width=400,
                                             height=11,
                                             border_color=style.CLR_PRIMARY,
@@ -39,22 +39,48 @@ class ResultView(tk.Frame):
                                             orientation='horizontal',
                                             indeterminate_speed=0,
                                             determinate_speed=0.5)
-            wait_bar.place(x=200, y=43)
-            wait_bar.start()
+            self.wait_bar.place(x=200, y=43)
+            self.wait_bar.start()
+            
+            self.controller.send_email(receiver)
         else:
-            CTkMessagebox(title="Email sent", 
-                          message="Your email is succesfully sent, and should arrive shortly",
-                          icon='check', option_1='OK')
-        return 
+            print('No emailadress was inputted')
     
     def email_sent(self):
-        print('email sent')
+        # Update UI
+        self.wait_txt.configure(text="Email sent")
+        self.wait_bar.stop()
+        self.wait_bar.place_forget()
+
+        # Display messagebox
+        ctk.set_appearance_mode('dark')
+        CTkMessagebox(title="Email sent", 
+                          message="Your email is succesfully sent, and should arrive shortly",
+                          icon='check', option_1='OK')
         return  
     
+    def email_error(self):
+        # Update UI
+        self.wait_txt.configure(text="Something went wrong")
+        self.wait_bar.stop()
+
     def home(self):
-        print('home')
+        self.controller.home()
         return
     
+    def update_pdf(self):
+        # Stop the waitbar
+        self.pdfwait_bar.stop()
+        self.pdfwait_bar.place_forget()
+        
+        # Take away message
+        self.pdfwait_txt.place_forget()
+        
+        # Display pdf        
+        v1 = tkpdf.ShowPdf()
+        pdf_view = v1.pdf_view(self, width=716, height=480-97, pdf_location=paths.PATH_REPORT)
+        pdf_view.place(x=42, y=77, width=716, height=480-97, anchor='nw')
+
     def populate_UI(self):
         # ------------------
         #   IMAGES USED
@@ -91,7 +117,22 @@ class ResultView(tk.Frame):
         # ------------------
         #   PDF
         # ------------------
-        v1 = tkpdf.ShowPdf()
-        pdf_view = v1.pdf_view(self, width=716, height=480-97, pdf_location=paths.PATH_REPORT)
-        pdf_view.place(x=42, y=77, width=716, height=480-97, anchor='nw')
+        self.pdfwait_txt = ctk.CTkLabel(master=self,
+                                    text="Processing your data...",
+                                    text_color=style.CLR_ACCENT,
+                                    font=style.FNT_OVERLINE_IT,
+                                    anchor='n')
+        self.pdfwait_txt.place(x=400, y=77, anchor='n')
+        
+        self.pdfwait_bar = ctk.CTkProgressBar(master=self,
+                                        width=600,
+                                        height=11,
+                                        border_color=style.CLR_PRIMARY,
+                                        fg_color=style.CLR_BACKGROUND,
+                                        progress_color=style.CLR_ACCENT,
+                                        orientation='horizontal',
+                                        indeterminate_speed=0,
+                                        determinate_speed=0.5)
+        self.pdfwait_bar.place(x=100, y=100)
+        self.pdfwait_bar.start()
         return

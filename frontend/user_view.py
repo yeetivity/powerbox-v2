@@ -14,12 +14,13 @@ class UserView(tk.Frame):
         tk.Frame.__init__(self, parent, bg=style.CLR_BACKGROUND)
                         
         self.resultIDs = {}
+        self.controller = controller
         
         self.populate_UI()
         return
     
     def back(self):
-        print('back')
+        self.controller.back()
         return
 
     def edit(self):
@@ -31,12 +32,12 @@ class UserView(tk.Frame):
         return
    
     def item_selected(self, event):
-        # get selected index
+        # Get selected index
         selected_index = self.resultlist.curselection()
-        # get corresponding resultID
+        # Get corresponding resultID
         resultID = self.resultIDs[self.resultlist.get(selected_index)]
-        
-        self.controller.goto_result(self, resultID)
+        # Open selected result
+        self.controller.goto_result(resultID)
         return
 
     def update_resultlist(self, results):
