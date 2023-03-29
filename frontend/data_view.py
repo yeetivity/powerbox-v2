@@ -19,14 +19,16 @@ class DataView(tk.Frame):
         return
     
     def back(self):
-        print('back')
+        self.controller.stop_measurement_thread()
+        self.controller.back()
         return
     
     def end(self):
-        print('end')
+        self.controller.stop_measurement()
         return
     
     def recalibrate(self):
+        # Todo: create simple calibration step somewhere (+c to data)
         print('recalibrate')
         return
     
@@ -235,3 +237,19 @@ class DataView(tk.Frame):
                             bg=clr_user2, fg= style.CLR_ONBACKGROUND, height=106)
         pf2_data.place(anchor='ne', x=364, y=20, height=106)
         return
+
+    def display_time(self, time):
+        self.time_var.set(round(time,1))
+
+    def display_data_1p(self, data):
+        self.force = data[0]
+        self.power_var.set(round(data[1], 0))
+        self.mf_var.set(round(data[2], 0))
+        self.pf_var.set(round(data[3], 0))
+
+    def display_data_2p(self, data):
+        self.force1_var.set(round(data[0], 0))
+        self.force2_var.set(round(data[1], 0))
+        self.velocity_var.set(round(data[2], 2))
+        self.pf1_var.set(round(data[3], 0))
+        self.pf2_var.set(round(data[4], 0))

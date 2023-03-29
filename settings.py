@@ -85,30 +85,14 @@ class Paths():
     PATH_LOGO_PB_SMALL = PATH_IMAGE_FOLDER + "Logo_Small.png"
     PATH_LOGO_RF_SMALL = PATH_IMAGE_FOLDER + "rf_logo.png"
 
-#class Images():
-    """ This class contains all images for the application """
-    # Get photoimages
-    # IC_BACK = PhotoImage(OpenImage(Paths.PATH_IC_BACK))
-    
-    # IC_EXPORT = PhotoImage(OpenImage(Paths.PATH_IC_EXPORT))
-    # IC_FINDRESULTS = PhotoImage(OpenImage(Paths.PATH_IC_FINDRESULTS))
-    
-    # IC_PRINT = PhotoImage(OpenImage(Paths.PATH_IC_PRINT))
-    
-    # IC_SAVE = PhotoImage(OpenImage(Paths.PATH_IC_SAVE))
-    # IC_SETTINGS = PhotoImage(OpenImage(Paths.PATH_IC_SETTINGS))
-    
-    # IC_HOME = PhotoImage(OpenImage(Paths.PATH_IC_HOME))
-    # IC_END = PhotoImage(OpenImage(Paths.PATH_IC_END))
-    
-    # LOGO_PB_BIG = PhotoImage(OpenImage(Paths.PATH_LOGO_PB_BIG))
-    # LOGO_PB_SMALL = PhotoImage(OpenImage(Paths.PATH_LOGO_PB_SMALL))
-    # LOGO_RF_SMALL = PhotoImage(OpenImage(Paths.PATH_LOGO_RF_SMALL))
-
-
 class ApplicationSettings():
     WINDOW_HEIGHT = 480  # pixels
     WINDOW_WIDTH = 800  # pixels
 
     SPORTS = ("Greco-Roman Wrestling", "Freestyle Wrestling", "Judo", "Rugby", "Other")
     GENDERS = ("Male", "Female")
+
+    FREQUENCY = 10  # Hz
+
+    UPDATE_TIME_FREQUENCY = 2  # Hz
+    UPDATE_VARS_FREQUENCY = 2  # Hz

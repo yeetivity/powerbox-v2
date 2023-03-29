@@ -60,6 +60,9 @@ class Model():
         
     def get_userdetails(self):
         return self.userdetails
+    
+    def set_rawdata(self, rawdata):
+        self.rawdata = rawdata
 
     def get_details_for_email(self):
         return self.userdetails['name'], self.sessiondetails['date'], self.sessiondetails['resultID']

@@ -20,6 +20,7 @@ import frontend.home
 import frontend.result_view
 from frontend.result_view import ResultView
 import frontend.data_view
+from frontend.data_view import DataView
 import frontend.user_view
 import frontend.user_create
 import frontend.user_select
@@ -46,6 +47,7 @@ class powerboxApplication(ctk.CTk):
         self.email_generator = EmailGenerator()
         self.analyser = DataAnalyser()
         self.pdf_generator = PDFGenerator()
+        self.data_reader = DataReader()
 
         self.fstack = []  # Stack of loaded frames
         self.options = OptionDict({'n_users': 1, 
@@ -184,11 +186,44 @@ class powerboxApplication(ctk.CTk):
         self.show(frontend.result_view.ResultView)
         print('goto_results')
 
-    def start_measurement(self):
-        # Todo: start the data_reader thread
+    def goto_dataview(self):
         self.show(frontend.data_view.DataView)
+
+        if isinstance(self.fstack[-1], DataView):
+            # Start data reader thread; give it a pointer to the dataview
+            self.measuring_thread = t.Thread(target=self.start_measurement, args=(self.fstack[-1], self.options['n_users']))
+            self.measuring_thread.start()
+        
         print('goto_dataview')
 
+    def start_measurement(self, datascreen, n_users):
+        # Threading method
+        self.data_reader.start(datascreen, n_users)
+
+    def stop_measurement(self):
+        self.stop_measurement_thread() # Stops the thread
+        
+        if self.options['start_mode'] == 1:
+            # If default start mode, save data to model
+            data = self.data_reader.get_data(self.options['n_users'])
+            for i in range(self.options['n_users']):
+                self.models[i].set_rawdata(data[i])
+                
+            # Todo: send models to data analysis (THREAD)
+            # Todo: if users = 1; display results
+            # Todo: if users = 2; show message that results can be viewed from profile page
+        else:
+            # Quickstart mode, don't save or analyse data
+            self.home()
+    
+    def stop_measurement_thread(self):
+        # Stop the measurement
+        self.data_reader.stop()
+        # Stop the thread
+        if self.measuring_thread != None:
+            self.measuring_thread.join()
+            print('Thread closed')
+    
     def get_users(self, filter1=None, filter2=None):
         return self.db.get_users(filter1, filter2)
     
