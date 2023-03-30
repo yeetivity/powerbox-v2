@@ -14,6 +14,7 @@ from collections.abc import MutableMapping
 import copy
 import threading as t
 import csv
+import numpy as np
 
 # Frontend imports
 import frontend.home
@@ -88,8 +89,10 @@ class powerboxApplication(ctk.CTk):
         # Clear stack
         self.fstack.clear()
 
-        # Reinitialize model
+        # Reinitialize
         self.models = [Model(), None]
+        self.options['for_measurement'] = True
+        self.options['creating'] = False
 
         # Show home
         self.show(frontend.home.Home)
@@ -178,7 +181,7 @@ class powerboxApplication(ctk.CTk):
             # Else: show a messagebox that results can be viewed from the user profile
         else:
             # Get session details from db and send them to model
-            self.sessiondetails_to_models(self.get_result(resultID=resultID))
+            self.db_sessiondetails_to_models(self.get_result(resultID=resultID))
             self.models[0].load_data_from_csv()
             analysis_thread = t.Thread(target=self.start_comparison, args=(self.models[0],))
             analysis_thread.start()
@@ -206,12 +209,19 @@ class powerboxApplication(ctk.CTk):
         if self.options['start_mode'] == 1:
             # If default start mode, save data to model
             data = self.data_reader.get_data(self.options['n_users'])
+            # Create a box for the analysis threads
+            self.analyser_threads = [None, None]
             for i in range(self.options['n_users']):
                 self.models[i].set_rawdata(data[i])
-                
-            # Todo: send models to data analysis (THREAD)
-            # Todo: if users = 1; display results
-            # Todo: if users = 2; show message that results can be viewed from profile page
+                self.analyser_threads[i] = t.Thread(target=self.start_analysis(self.models[i]))
+                self.analyser_threads[i].start()
+            
+            if self.options['n_users'] == 2:
+                self.fstack[-1].display_msg()
+                self.home()
+                return
+            else:
+                self.goto_result()
         else:
             # Quickstart mode, don't save or analyse data
             self.home()
@@ -242,13 +252,23 @@ class powerboxApplication(ctk.CTk):
         print(f'database confirmed that {userID} is added')
         return userID
 
-    def sessiondetails_to_models(self, sessiondetails):
-        #Todo: see how to handle souble users
+    def db_sessiondetails_to_models(self, sessiondetails):
+        #This is specifically for one user
         self.models[0].set_sessiondetails(sessiondetails)
+
+    def session_details_to_model(self, sessiondetails):
+        # This can be for two users
+        for i in range(self.options['n_users']):
+            self.models[i].set_sessiondetails(sessiondetails[i])
+  
+    def start_analysis(self, model):
+        self.analyser.analyse_model(model)
+        self.start_comparison(model)
+        self.save_model(model)
     
     def start_comparison(self, model):
-        #Note: run in thread
-        # Get last analysed data
+        # Note: runs in thread
+        # Get last analysed data #Todo: this might not be the last data, but the current data...
         analysedpath = Paths.PATH_ANALYSEDDATA + str(model.sessiondetails['resultID']) + '.csv'
         with open(analysedpath) as f1:
             file1 = list(csv.DictReader(f1))
@@ -287,6 +307,36 @@ class powerboxApplication(ctk.CTk):
         elif isinstance(self.fstack[-1], ResultView):
             self.fstack[-1].email_error()
     
+    def save_model(self, model):
+        # Get the modeldata
+        usrID, modeldata = model.get_model_data()
+        
+        # Save resultentry to database -> returns ID to which it is saved
+        resultID = self.db.add_resultentry(usrID, modeldata[0])
+        model.set_resultID(resultID)
+        
+        # Define locations to save data to
+        path_rawresult = Paths.PATH_RAWDATA + str(resultID) + '.csv'
+        path_analysedresult = Paths.PATH_ANALYSEDDATA + str(resultID) + '.csv'
+        
+        # Write to csv
+        self.write_to_csv(modeldata[1], path_rawresult)
+        self.write_to_csv(modeldata[2], path_analysedresult)
+        
+    def write_to_csv(self, dictionary, path):
+        """ Method to save a dictionary to a csv """
+        
+        # Cast everything to list, so that it is loopable
+        with open(path, 'w', newline='') as outfile:
+            writer = csv.writer(outfile)
+            writer.writerow(dictionary.keys())
+
+            # Iterate over the rows and write them to the CSV file
+            for row in zip(*dictionary.values()):
+                writer.writerow(row)
+
+        print("Successfully written to CSV")
+        
 class OptionDict(MutableMapping):
     def __init__(self, *args, **kwargs):
         self._data = dict(*args, **kwargs)
