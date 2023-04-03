@@ -181,3 +181,22 @@ class Database():
             """, (usrID,))
         self.conn.commit()
         return
+
+    def add_resultentry(self, usrID, sessiondetails):
+        """
+        Method to add new result to the database
+        
+        =INPUT=
+        usrID               id of the user, so that the result can be linked to the user
+        sessiondetails      tuple with weight, pushheight, and date
+        
+        =OUTPUT=
+        lastrowid           identifier of result entry created
+        """
+        self.cur.execute("""
+                         INSERT INTO results VALUES (NULL, ?, ?, ?, ?)
+                         """,
+                         (usrID, sessiondetails[0], sessiondetails[1], sessiondetails[2]))
+        self.conn.commit()
+        return self.cur.lastrowid
+        

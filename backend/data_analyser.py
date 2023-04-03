@@ -17,25 +17,20 @@ class DataAnalyser():
     def __init__(self):
         pass
     
-    def analyse_data(self, force, velocity, time):
+    def analyse_model(self, model):
         """
         Analyses raw data and outputs processed data
         =INPUT=
-        force       list of raw force values (are calibrated), in [kg]
-        velocity    list of raw velocities in [m/s], - for direction towards the athlete, + for direction away from athlete
-        time        list of timestamps in [s]
-        
-        =OUTPUT=
-        power           list of power [W]
-        analyseddata    dictionary with peak force, mean force, time to peak force,
-                        best rfd, average power, average velocity, distance,
-                        peak acceleration, fatigability, and time to fatigue
+        model
         """
         
         # Convert lists to numpy arrays
-        f = np.array(force)
-        v = np.array(velocity)
-        t = np.array(time)
+        f = np.array(model.rawdata['force'])
+        v = np.array(model.rawdata['velocity'])
+        p = np.array(model.rawdata['power'])
+        t = np.array(model.rawdata['time'])
+        
+        # Do analysis
         
     def compare_data(self, current_data, lastresult, personalbests):
         """

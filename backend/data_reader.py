@@ -22,6 +22,7 @@ class DataReader():
         self.combinedforces =  deque()
         self.meanforce = np.zeros(2)
         self.peakforce = np.zeros(2)
+        self.a = 0.1
 
     def start(self, datascreen, n_users):
         """
@@ -34,25 +35,34 @@ class DataReader():
         self.ui = datascreen
         packet_time = 0
         self.measuring = True
+        velocity_old = 0
 
         # TODO: UNCOMMENT WHEN CONNECTED TO PI PICO
-        # # Setup serial readout
-        # port = serial.Serial('/dev/ttyACM0')
-        # port.flushInput()
+        # Setup serial readout
+        port = serial.Serial('/dev/ttyACM0')
+        port.flushInput()
 
-        # received_bytes = bytearray(12)
+        received_bytes = bytearray(8)
 
         while self.measuring:
             # TODO: UNCOMMENT WHEN CONNECTED TO PI PICO
-            # # Read the received bytes into the bytearray
-            # port.readinto(received_bytes)
+            # Read the received bytes into the bytearray
+            port.readinto(received_bytes)
 
             # # Extract the force and velocity values
             # force1, force2, velocity = struct.unpack_from('fff', received_bytes)
-            force1, force2, velocity = self.generate_random(n_users)
+            # force1, force2, velocity = self.generate_random(n_users)
+            force1 = 1
+            force2 = 1
+            n_lines, velocity = struct.unpack('ff', received_bytes)
+            print(velocity)
 
-            # TODO: take away when connected to pi pico
-            t.sleep(0.1)
+            # Filter velocity
+            velocity_filtered = self.a * v + (1 - self.a) * velocity_old
+            velocity_old = velocity_filtered
+
+            # # TODO: take away when connected to pi pico
+            # t.sleep(0.1)
 
             # Update the data dictionary
             self.data['forces1'].append(force1)

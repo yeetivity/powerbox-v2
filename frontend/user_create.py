@@ -24,7 +24,6 @@ class UserCreate(tk.Frame):
         self.pushheight_vars = [None, None]
                 
         self.populate_UI()
-        return
     
     def back(self):
         self.controller.back()
@@ -33,38 +32,31 @@ class UserCreate(tk.Frame):
 
     def finish(self):
         if self.creating:
-            # This can only have one user
-            # Get the userdetails from tab 1
-            name, sport, gender, height = (e.get() for e in (
-            self.name_entries[0], self.sport_vars[0], self.gender_vars[0], self.height_entries[0]))
+            # Get user details (creating only works for 1 user)
+            name, sport, gender, height = (e.get() for e in(
+                self.name_vars[0], self.sport_vars[0], self.gender_vars[0], self.height_vars[0]
+            ))
 
-            # Send userdetails to database
-            userID = self.controller.user_to_database((name, sport, gender, height))
+            # Send userdetails to database (returns userID)
+            userID = self.controller.user_to_database((name, sport, gender, int(height)))
 
-            # Get sessiondetails
-            if self.for_measurement:
-                weight, push_height = (e.get() for e in (self.weight_entries[0], self.pushheight_entries[0]))
+            # Send userdetails to model
+            self.controller.userIDs_to_models((userID, None))
 
-                # Send userdetails to models
-                self.controller.userIDs_to_models((userID, None))
-                
-                # Send sessiondetails to models          
-                self.controller.sessiondetails_to_models(([weight, push_height], None))
-                self.controller.start_measurement()
-                return
-            else:
+            if not self.for_measurement:
                 self.controller.home()
                 return
+        
+        # Get session details (could be for 2 users)
+        sessiondetails = [None, None]  # Initialisation
 
-        elif self.for_measurement and not self.creating:
-            # This can have two users
-            sessiondetails = [None, None]
-            for i in range(self.n_users):
-                weight, push_height = (e.get() for e in (self.weight_entries[i], self.pushheight_entries[i]))
-                sessiondetails[i] = [weight, push_height]
+        for i in range(self.n_users):
+            weight, pushheight = (e.get() for e in (self.weight_vars[i], self.pushheight_vars[i]))
+            sessiondetails[i] = (float(weight), int(pushheight))
 
-            self.controller.sessiondetails_to_models(sessiondetails)
-            return   
+        self.controller.session_details_to_model(sessiondetails)
+        
+        self.controller.goto_dataview()
 
     def populate_UI(self):
         # ------------------

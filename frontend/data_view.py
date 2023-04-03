@@ -6,6 +6,8 @@ from PIL.Image import open as OpenImage
 from settings import StyleElements as style
 from settings import Paths as paths
 
+from CTkMessagebox import CTkMessagebox
+
 class DataView(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent, bg=style.CLR_BACKGROUND)
@@ -253,3 +255,10 @@ class DataView(tk.Frame):
         self.velocity_var.set(round(data[2], 2))
         self.pf1_var.set(round(data[3], 0))
         self.pf2_var.set(round(data[4], 0))
+        
+    def display_msg(self):
+        # Display messagebox
+        ctk.set_appearance_mode('dark')
+        CTkMessagebox(title="Data is being processed", 
+                          message="Your data is being processed, and can be found in the user profiles once its done",
+                          icon='check', option_1='OK')
