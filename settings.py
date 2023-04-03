@@ -93,6 +93,9 @@ class ApplicationSettings():
     GENDERS = ("Male", "Female")
 
     FREQUENCY = 10  # Hz
+    SLEEP_TIME = 0.1 # s    1/FREQUENCY
+    
+    ALPHA_VELOCITY_FILTER = 0.1
 
     UPDATE_TIME_FREQUENCY = 2  # Hz
     UPDATE_VARS_FREQUENCY = 2  # Hz

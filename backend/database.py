@@ -139,6 +139,7 @@ class Database():
 
     def get_lastresult(self, usrID):
         """ Method that gets the last resultID of a user"""
+        #Todo: what if there are no results yet
         return self.get_userresults(usrID)[-1]
     
     def get_userpbs(self, usrID):
@@ -196,7 +197,7 @@ class Database():
         self.cur.execute("""
                          INSERT INTO results VALUES (NULL, ?, ?, ?, ?)
                          """,
-                         (usrID, sessiondetails[0], sessiondetails[1], sessiondetails[2]))
+                         (usrID, sessiondetails['weight'], sessiondetails['pushheight'], sessiondetails['date']))
         self.conn.commit()
         return self.cur.lastrowid
         

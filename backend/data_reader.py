@@ -11,20 +11,33 @@ import time as t
 import numpy as np
 from collections import deque
 from settings import ApplicationSettings
-import random
-class DataReader():
-    def __init__(self):
+import random, threading
+class DataReader(threading.Thread):
+    def __init__(self, stop_flag, data_screen, n_users):
+        threading.Thread.__init__(self)
+        
+        # Set a stop flag
+        self.stop_flag = stop_flag
+        
+        # Initialize storage variables
         self.data = {'forces1' : deque(),
                      'forces2' : deque(),
                      'velocities' : deque(),
                      'times' : deque()}
-
         self.combinedforces =  deque()
         self.meanforce = np.zeros(2)
         self.peakforce = np.zeros(2)
-        self.a = 0.1
+        
+        # Initialise UI pointer
+        self.ui = data_screen
+        
+        # Initialise number of users
+        self.n_users = n_users
 
-    def start(self, datascreen, n_users):
+        # Filter variables
+        self.a = ApplicationSettings.ALPHA_VELOCITY_FILTER
+
+    def run(self):
         """
         Method that starts gathering data
         =INPUT=
@@ -32,37 +45,32 @@ class DataReader():
         n_users         the amount of users
         """
         # Init
-        self.ui = datascreen
         packet_time = 0
-        self.measuring = True
         velocity_old = 0
 
         # TODO: UNCOMMENT WHEN CONNECTED TO PI PICO
         # Setup serial readout
-        port = serial.Serial('/dev/ttyACM0')
-        port.flushInput()
+        # port = serial.Serial('/dev/ttyACM0')
+        # port.flushInput()
 
-        received_bytes = bytearray(8)
+        # received_bytes = bytearray(8)
 
-        while self.measuring:
+        while not self.stop_flag.is_set():
             # TODO: UNCOMMENT WHEN CONNECTED TO PI PICO
             # Read the received bytes into the bytearray
-            port.readinto(received_bytes)
+            # port.readinto(received_bytes)
 
             # # Extract the force and velocity values
             # force1, force2, velocity = struct.unpack_from('fff', received_bytes)
-            # force1, force2, velocity = self.generate_random(n_users)
-            force1 = 1
-            force2 = 1
-            n_lines, velocity = struct.unpack('ff', received_bytes)
-            print(velocity)
+            force1, force2, velocity = self.generate_random(self.n_users)
+            # force1 = 1
+            # force2 = 1
+            # n_lines, velocity = struct.unpack('ff', received_bytes)
+            # print(velocity)
 
             # Filter velocity
-            velocity_filtered = self.a * v + (1 - self.a) * velocity_old
-            velocity_old = velocity_filtered
-
-            # # TODO: take away when connected to pi pico
-            # t.sleep(0.1)
+            # velocity_filtered = self.a * v + (1 - self.a) * velocity_old
+            # velocity_old = velocity_filtered
 
             # Update the data dictionary
             self.data['forces1'].append(force1)
@@ -73,16 +81,16 @@ class DataReader():
             # Update time
             packet_time += (1 / ApplicationSettings.FREQUENCY)
 
-            if n_users == 1:
+            if self.n_users == 1:
                 self.combinedforces.append(max(force1, force2))
 
             # Update running average and peakforce
-            if n_users == 2:
+            if self.n_users == 2:
                 self.meanforce[0] = np.mean(self.data['forces1'])
                 self.meanforce[1] = np.mean(self.data['forces2'])
                 self.peakforce[0] = np.max(self.data['forces1'])
                 self.peakforce[1] = np.max(self.data['forces2'])
-            elif n_users == 1:
+            elif self.n_users == 1:
                 self.meanforce[0] = np.mean(self.combinedforces)
                 self.peakforce[0] = np.mean(self.combinedforces)
 
@@ -92,10 +100,12 @@ class DataReader():
             
             # Update vars on 4 Hz
             if round(packet_time, 3) % (1 / ApplicationSettings.UPDATE_VARS_FREQUENCY) == 0:
-                if n_users == 1:
+                if self.n_users == 1:
                     self.update_ui_vars_1p(self.combinedforces, velocity, self.peakforce, self.meanforce)
                 else:
                     self.update_ui_vars_2p(force1, force2, velocity, self.peakforce)
+                    
+            t.sleep(ApplicationSettings.SLEEP_TIME)
 
     def update_ui_time(self, packet_time):
         self.ui.display_time(packet_time)
@@ -111,9 +121,8 @@ class DataReader():
         self.ui.display_data_2p((force1, force2, velocity, peakforces[0], peakforces[1]))
 
     def stop(self):
-        """ Method to stop gathering data """
-        self.measuring = False
-
+        self.stop_flag.set()
+        
     def get_data(self, n_users):
         """ Method to receive data saved in the class """
         if n_users == 1:

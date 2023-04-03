@@ -23,6 +23,8 @@ class DataAnalyser():
         =INPUT=
         model
         """
+        # Create empty analysed data
+        self.analysed = {}
         
         # Convert lists to numpy arrays
         f = np.array(model.rawdata['force'])
@@ -31,6 +33,45 @@ class DataAnalyser():
         t = np.array(model.rawdata['time'])
         
         # Do analysis
+        self.analyse_force(f, t)
+        self.analysed['power_avg'] = np.average(p)
+        self.analyse_velocity(v, t)
+        self.compute_fatigue()
+        
+        # Write to model
+        model.analyseddata = self.analysed
+        
+    def analyse_force(self, f, t):
+        self.analysed['peakforce'] = np.max(f)
+        self.analysed['meanforce'] = np.average(f)
+        
+        # Time to peak force
+        self.analysed['timetopeakforce'] = t[f.argmax()] - t[0]  # Todo: Replace for peak and valley detection
+        
+        # Compute RFDs
+        self.analysed['best_rfd'] = 0 # Todo: replace for RFD algorithm
+        
+    def analyse_velocity(self, v, t):
+        self.analysed['velocity_avg'] = np.average(v)
+        self.analysed['distance'] = sum(np.multiply(v, t))
+        
+        # Differentiation to get acceleration
+        a = np.diff(v) / np.diff(t)
+        self.analysed['peak_acc'] = np.max(a)
+    
+    def compute_fatigue(self):
+        # Todo: create algorithm for this
+        # Compute based on RFD
+        rfd_fatigue = 0
+        
+        # Compute based on power
+        pwr_fatigue = 0
+        
+        # Combine
+        fatigue = 0
+        
+        self.analysed['fatigability'] = fatigue
+        self.analysed['timetofatigue'] = 10000
         
     def compare_data(self, current_data, lastresult, personalbests):
         """
@@ -41,7 +82,11 @@ class DataAnalyser():
         personalbests       tuple with personal bests
         
         =OUTPUT=
-        comparison  dictionary with percentual comparison
+        comparison          dictionary with percentual comparison
+        new_pbs             dictionary with new personal bests
+        
+        =NOTE=
+        Create a new pb dictionary
         """
         
         comparison = {}

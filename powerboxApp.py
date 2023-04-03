@@ -11,8 +11,10 @@ import customtkinter as ctk
 
 # Functionality imports
 from collections.abc import MutableMapping
+from collections import deque
 import copy
 import threading as t
+import time
 import csv
 import numpy as np
 
@@ -48,7 +50,6 @@ class powerboxApplication(ctk.CTk):
         self.email_generator = EmailGenerator()
         self.analyser = DataAnalyser()
         self.pdf_generator = PDFGenerator()
-        self.data_reader = DataReader()
 
         self.fstack = []  # Stack of loaded frames
         self.options = OptionDict({'n_users': 1, 
@@ -168,18 +169,8 @@ class powerboxApplication(ctk.CTk):
 
     def goto_result(self, resultID=None):
         # NOTE: This class can only take one result
-        if self.options['for_measurement']:
-            pass
-            # Get rawdata from the data_reader class
-            # Convert the data to one or two person data
-            # Write the data to the models
-            # Send the models to the data analyser for analysis -> writes analysis and comparison to the model
-            # Send the required data to the pdf creator -> saves the report to temporary storage
-            # Save the models
-            # If n_users != 2
-            # Show result view
-            # Else: show a messagebox that results can be viewed from the user profile
-        else:
+        
+        if not self.options['for_measurement']:
             # Get session details from db and send them to model
             self.db_sessiondetails_to_models(self.get_result(resultID=resultID))
             self.models[0].load_data_from_csv()
@@ -194,21 +185,18 @@ class powerboxApplication(ctk.CTk):
 
         if isinstance(self.fstack[-1], DataView):
             # Start data reader thread; give it a pointer to the dataview
-            self.measuring_thread = t.Thread(target=self.start_measurement, args=(self.fstack[-1], self.options['n_users']))
+            stop_flag = t.Event()
+            self.measuring_thread = DataReader(stop_flag, self.fstack[-1], self.options['n_users'])
             self.measuring_thread.start()
         
-        print('goto_dataview')
-
-    def start_measurement(self, datascreen, n_users):
-        # Threading method
-        self.data_reader.start(datascreen, n_users)
+            print('measurement thread started...')
 
     def stop_measurement(self):
         self.stop_measurement_thread() # Stops the thread
         
         if self.options['start_mode'] == 1:
             # If default start mode, save data to model
-            data = self.data_reader.get_data(self.options['n_users'])
+            data = self.measuring_thread.get_data(self.options['n_users'])
             # Create a box for the analysis threads
             self.analyser_threads = [None, None]
             for i in range(self.options['n_users']):
@@ -227,10 +215,8 @@ class powerboxApplication(ctk.CTk):
             self.home()
     
     def stop_measurement_thread(self):
-        # Stop the measurement
-        self.data_reader.stop()
-        # Stop the thread
         if self.measuring_thread != None:
+            self.measuring_thread.stop()
             self.measuring_thread.join()
             print('Thread closed')
     
@@ -263,13 +249,16 @@ class powerboxApplication(ctk.CTk):
   
     def start_analysis(self, model):
         self.analyser.analyse_model(model)
+        # This function is to quick, so I sleep it for a second # Todo: findout why this slows down the main thread somehow...
+        time.sleep(1)
         self.start_comparison(model)
         self.save_model(model)
     
     def start_comparison(self, model):
         # Note: runs in thread
         # Get last analysed data #Todo: this might not be the last data, but the current data...
-        analysedpath = Paths.PATH_ANALYSEDDATA + str(model.sessiondetails['resultID']) + '.csv'
+        last_result_info = self.db.get_lastresult(model.userdetails['userID'])
+        analysedpath = Paths.PATH_ANALYSEDDATA + str(last_result_info[0]) + '.csv'
         with open(analysedpath) as f1:
             file1 = list(csv.DictReader(f1))
             last_result = {k: float(col[k]) for k in file1[0].keys() for col in file1}
@@ -289,6 +278,8 @@ class powerboxApplication(ctk.CTk):
         # Update resultview (first check if we are seeing resultview)
         if isinstance(self.fstack[-1], ResultView):
             self.fstack[-1].update_pdf()
+        else:
+            print("Analysis done before the resultview was triggered")
             
     def send_email(self, receiver):
         username, date, resultID = self.models[0].get_details_for_email()
@@ -325,15 +316,17 @@ class powerboxApplication(ctk.CTk):
         
     def write_to_csv(self, dictionary, path):
         """ Method to save a dictionary to a csv """
-        
-        # Cast everything to list, so that it is loopable
-        with open(path, 'w', newline='') as outfile:
+               
+        with open(path, 'w', newline='') as outfile:         
             writer = csv.writer(outfile)
             writer.writerow(dictionary.keys())
 
-            # Iterate over the rows and write them to the CSV file
-            for row in zip(*dictionary.values()):
-                writer.writerow(row)
+            if isinstance(next(iter(dictionary.values())), (list, deque)):
+                # Iterate over the rows and write them to the CSV file
+                for row in zip(*dictionary.values()):
+                    writer.writerow(row)
+            else:
+                writer.writerow(dictionary.values())
 
         print("Successfully written to CSV")
         
