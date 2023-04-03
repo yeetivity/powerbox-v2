@@ -9,17 +9,23 @@ import time as t
 
 matplotlib.use('Agg') #use a non-interactive backend
 
-#Set up serial readout
+# Set up serial readout
 ser = serial.Serial('/dev/ttyACM0')
 ser.flushInput()
 
-#initialize lists
+# Initialise lists
 velocity = []
+velocity_unfiltered = []
 lines_moved = []
 time = []
 
+# Initialise filter data
+velocity_old = 0
+a = 0.1
+
 def save():
     global velocity
+    global velocity_unfiltered
     global lines_moved
     global time
 
@@ -31,8 +37,8 @@ def save():
     #Write to csv
     with open(csvfilename, 'w') as f:
         writer = csv.writer(f)
-        writer.writerow(['velocity', 'lines_moved', 'time'])
-        writer.writerows(zip(velocity, lines_moved, time))
+        writer.writerow(['velocity', 'velocity_unfiltered', 'lines_moved', 'time'])
+        writer.writerows(zip(velocity, velocity_unfiltered, lines_moved, time))
     
     #Plot to figure and save
     fig, ax = plt.subplots()
@@ -52,8 +58,13 @@ try:
         ser_bytes = ser.read(8)
         # decoded_bytes = float(ser_bytes[0:len(ser_bytes)-2].decode("utf-8"))
         n_lines, v = struct.unpack('ff', ser_bytes)
+
+        velocity_filtered = a * v + (1 - a) * velocity_old
+        velocity_old = velocity_filtered
+
+        velocity_unfiltered.append(v)
         time.append(sensor_time)
-        velocity.append(v)
+        velocity.append(velocity_filtered)
         lines_moved.append(n_lines)
         sensor_time += 1/10
         
