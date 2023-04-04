@@ -5,12 +5,11 @@ from hx711 import *
 import struct
 import sys
 
-#Initialize rotary class with signal 1 and signal 2 pin
+# Initialize rotary class with signal 1 and signal 2 pin
 rotary = Rotary(2, 3)
-#todo: initialize adcs
-#Initialize on-board LED
+# Initialize on-board LED
 led = Pin(25, Pin.OUT)
-#Initialize variables #todo: change initialization of forces
+# Initialize variables
 lines_moved = 0
 FREQ_S = 10
 
@@ -39,18 +38,6 @@ def run(timer):
 
 rotary.add_handler(rotary_changed)
 
-#timer for getting the data on 60 Hz
+# Run the sensor on sampling frequency
 timer = Timer()
 timer.init(freq=FREQ_S, mode=Timer.PERIODIC, callback=run)
-
-
-
-
-
-    
-
-
-
-
-
-
