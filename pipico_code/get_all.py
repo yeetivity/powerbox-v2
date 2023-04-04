@@ -1,13 +1,29 @@
 from rotary_optimized import Rotary
-from utime import ticks_us, ticks_diff, sleep_ms
+from utime import ticks_us, ticks_diff, sleep_us
 from machine import Pin, UART, Timer
 from hx711 import *
 import struct
 import sys
 import _thread
 
-force1 = 0.0
-force2 = 0.0
+#######################################################
+##   SETUP
+#######################################################
+
+# Initialize on-board LED
+led = Pin(25, Pin.OUT)
+
+# Initialize variables
+force1, force2, velocity, lines_moved, sample_nr = 0.0, 0.0, 0.0, 0, 0
+FREQ_S = 80
+DOWNSAMPLE = 8  # Ratio to downsample velocity with
+
+# Initialize rotary class with signal 1 and signal 2 pin
+rotary = Rotary(2, 3)
+
+############################
+# HELPER METHODS
+############################
 
 def force_thread():
     global force1
@@ -22,96 +38,50 @@ def force_thread():
 
     # 3. [OPTIONAL] set gain and save it to the hx711
     # chip by powering down then back up
-    hx1.set_gain(hx711.gain.gain_128)
+    hx1.set_gain(hx711.gain.gain_64)
     hx1.set_power(hx711.power.pwr_down)
     hx711.wait_power_down()
     hx1.set_power(hx711.power.pwr_up)
 
-    hx2.set_gain(hx711.gain.gain_128)
+    hx2.set_gain(hx711.gain.gain_64)
     hx2.set_power(hx711.power.pwr_down)
     hx711.wait_power_down()
     hx2.set_power(hx711.power.pwr_up)
 
     # 4. wait for readings to settle
-    hx711.wait_settle(hx711.rate.rate_10)
+    hx711.wait_settle(hx711.rate.rate_80)
 
     while(True):
         force1 = hx1.get_value()
         force2 = hx2.get_value()
-
-        # print(f'{force1}   {force2}')
-
-
-
-#######################################################
-##   SETUP
-#######################################################
-
-# Initialize on-board LED
-led = Pin(25, Pin.OUT)
-
-# Initialize variables #todo: change initialization of forces
-last_tick, av, force1, force2, lines_moved = 0.0, 0.0, 0.0, 0.0, 0
-
-# Initialize rotary class with signal 1 and signal 2 pin
-rotary = Rotary(2, 3)
-
-
-
-# HELPER METHODS
-############################
-
-
-def rotary_changed2(change):
-    global last_tick
-    global av
-    
-    #Todo: change methodology to counting lines
-
-    #determine current time
-    tick = ticks_us()
-    #determine time difference
-    dt = ticks_diff(tick, last_tick)
-    
-    if change == Rotary.ROT_CW:
-        #counterclockwise rotation
-        direction = -1
-    elif change == Rotary.ROT_CCW:
-        #clockwise rotation
-        direction = 1
-    #angular velocity
-    av = direction * 1.44 / dt
-    # print(av)
-    #update last time
-    last_tick = tick
-        
+        sleep_us(12500)
 
 def rotary_changed(change):
     global lines_moved
-
     lines_moved += change
 
-
-def pack_message(speed, force_1, force_2):
-    msg = struct.pack("fff", speed, force_1, force_2)
+def pack_message(velocity, force_1, force_2):
+    msg = struct.pack("fff", velocity, force_1, force_2)
     return msg
     
-
-def run(timer):    
+def run(timer):
     led.toggle()
-    global av
     global lines_moved
+    global sample_nr
+    global velocity
 
-    # Compute speed [degrees/second]
-    av = (lines_moved * 1.44) / (1/10)
-    # Reset line counter
-    lines_moved = 0
+    if (sample_nr % DOWNSAMPLE) == 0:
+        # Transform lines moved to velocity
+        velocity = lines_moved * 0.0031415926535897933 * FREQ_S
+        # Reset line counter
+        lines_moved = 0
+        # Reset sample counter to prevent big integer
+        sample_nr = 1
+    
+    sample_nr += 1
+    sys.stdout.buffer.write(pack_message(velocity, force1, force2))
 
-    sys.stdout.buffer.write(pack_message(av, force1, force2))
-    # print(f'{av}  {force1}  {force2}')
-
-
-
+###########################
 # MAIN
 ###########################
 
@@ -121,16 +91,11 @@ def main():
     """
     rotary.add_handler(rotary_changed)
 
-    # Timer for getting the data on 60 Hz
+    _thread.start_new_thread(force_thread, ())
+
     timer = Timer()
-    timer.init(freq=10, mode=Timer.PERIODIC, callback=run)
-
-    #uncomment if you want to use GPIO uart
-    #uart = UART(0, baudrate=115200, tx=Pin(16), rx=Pin(17))
-    #uart.init(bits=8, parity=None, stop=2)
-    _thread.start_new_thread(force_thread(), ())
-
-
-
+    timer.init(freq=FREQ_S, mode=Timer.PERIODIC, callback=run)
+    
 main()
+
 

@@ -15,7 +15,6 @@ FREQ_S = 10
 
 def rotary_changed(change):
     global lines_moved
-    
     lines_moved += change
     
 def pack_message(lines, velocity):
