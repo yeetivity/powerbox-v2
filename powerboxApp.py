@@ -201,7 +201,7 @@ class powerboxApplication(ctk.CTk):
             self.analyser_threads = [None, None]
             for i in range(self.options['n_users']):
                 self.models[i].set_rawdata(data[i])
-                self.analyser_threads[i] = t.Thread(target=self.start_analysis(self.models[i]))
+                self.analyser_threads[i] = t.Thread(target=self.start_analysis, args=(self.models[i],))
                 self.analyser_threads[i].start()
             
             if self.options['n_users'] == 2:
@@ -249,8 +249,6 @@ class powerboxApplication(ctk.CTk):
   
     def start_analysis(self, model):
         self.analyser.analyse_model(model)
-        # This function is to quick, so I sleep it for a second # Todo: findout why this slows down the main thread somehow...
-        time.sleep(1)
         self.start_comparison(model)
         self.save_model(model)
     

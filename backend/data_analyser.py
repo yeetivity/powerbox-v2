@@ -103,6 +103,7 @@ class DataAnalyser():
                 except ZeroDivisionError:
                     lr_compared = 0
                 try:
+                    #todo: fix for divide by zero that doesnt give zerodivisionerror
                     pb_compared = (current_data[key] * 100) / pb_val
                 except ZeroDivisionError:
                     pb_compared = 0
