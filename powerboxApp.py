@@ -360,6 +360,9 @@ class OptionDict(MutableMapping):
             self._callbacks[key] = []
         self._callbacks[key].append(callback)
 
+import tracemalloc
+tracemalloc.start()
+
 def main():
     app = powerboxApplication()
 
@@ -375,3 +378,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    print(tracemalloc.get_traced_memory())
+    tracemalloc.stop

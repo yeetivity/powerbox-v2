@@ -106,7 +106,7 @@ try:
         force2.append(force2_filtered)
 
         time.append(sensor_time)
-        sensor_time += 1/80
+        sensor_time += 1/60
         
         print('information: ', v, f1, f2)
 
@@ -114,3 +114,5 @@ except KeyboardInterrupt:
     print('I am quitting')
     save()
     pass
+
+print('number of samples:', len(force1))
