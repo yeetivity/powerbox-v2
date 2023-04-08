@@ -39,7 +39,7 @@ class Model():
                             'fatigability': None,
                             'timetofatigue': None}
         
-        self.compareddata = self.analyseddata.copy()
+        self.compareddata = {key: [100, 0] for key in self.analyseddata}
         
     def set_userdetails(self, user):
         """ Method that takes a user from the database and saves it to the model """

@@ -206,3 +206,16 @@ class Database():
         self.cur.execute(query)
         self.conn.commit()
         return
+    
+    def check_results(self, usrID):
+        """
+        Checks if a user already has results
+        
+        :params usrID: userID of user to be checked
+        :type usrID: int
+        :return: has_results:
+        :rtype: boolean
+        """
+        if len(self.get_userresults(usrID)) == 0:
+            return False
+        return True

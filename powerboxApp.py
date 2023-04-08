@@ -249,9 +249,26 @@ class powerboxApplication(ctk.CTk):
   
     def start_analysis(self, model):
         self.analyser.analyse_model(model)
-        self.start_comparison(model)
+        if self.db.check_results(model.userdetails['userID']):
+            self.start_comparison(model)
+        else:
+            self.save_first_result(model)
         self.save_model(model)
     
+    def save_first_result(self, model):
+        """ Only called if this is the first result of the user """
+        # Overwrite default personal bests in database
+        self.update_db_pbs(model.analyseddata, model.userdetails['userID'])
+        
+        # Create pdf
+        self.pdf_generator.create_pdf(model)
+        
+        # Update resultview (first check if we are seeing resultview)
+        if isinstance(self.fstack[-1], ResultView):
+            self.fstack[-1].update_pdf()
+        else:
+            print("Analysis done before the resultview was triggered")
+        
     def start_comparison(self, model):
         # Note: runs in thread
         # Get last analysed data #Todo: this might not be the last data, but the current data...
@@ -344,6 +361,7 @@ class powerboxApplication(ctk.CTk):
 
     def update_calibration_factor(self):
         self.measuring_thread.calibrate()
+        
 class OptionDict(MutableMapping):
     def __init__(self, *args, **kwargs):
         self._data = dict(*args, **kwargs)
