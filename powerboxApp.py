@@ -75,6 +75,7 @@ class powerboxApplication(ctk.CTk):
         if value == 1 and self.models[1] != None:
             # Single user mode, but the second model still exists
             del self.models[1]
+            self.models.append(None)
         elif value == 2 and self.models[1] == None:
             # Double user mode, but second model doesn't exist
             self.models[1] = copy.copy(self.models[0])
@@ -271,7 +272,7 @@ class powerboxApplication(ctk.CTk):
         
     def start_comparison(self, model):
         # Note: runs in thread
-        # Get last analysed data #Todo: this might not be the last data, but the current data...
+        # Get last analysed data
         last_result_info = self.db.get_lastresult(model.userdetails['userID'])
         analysedpath = Paths.PATH_ANALYSEDDATA + str(last_result_info[0]) + '.csv'
         with open(analysedpath) as f1:

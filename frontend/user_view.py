@@ -12,7 +12,9 @@ from settings import ApplicationSettings as appsettings
 class UserView(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent, bg=style.CLR_BACKGROUND)
-                        
+        
+        ctk.set_appearance_mode('light')
+        
         self.resultIDs = {}
         self.controller = controller
         

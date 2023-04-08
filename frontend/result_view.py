@@ -53,7 +53,7 @@ class ResultView(tk.Frame):
         self.wait_bar.place_forget()
 
         # Display messagebox
-        ctk.set_appearance_mode('dark')
+        ctk.set_appearance_mode('light')
         CTkMessagebox(title="Email sent", 
                           message="Your email is succesfully sent, and should arrive shortly",
                           icon='check', option_1='OK')

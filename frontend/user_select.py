@@ -14,9 +14,10 @@ class UserSelect(tk.Frame):
         tk.Frame.__init__(self, parent, bg=style.CLR_BACKGROUND)
         
         self.controller = controller
+        
+        ctk.set_appearance_mode('light')
 
         self.for_measurement = controller.options['for_measurement']
-        # If we are selecting for a measurement, n_users applies, otherwise it is 1
         self.n_users = controller.options['n_users'] if self.for_measurement else 1
         
         self.userIDs = {}

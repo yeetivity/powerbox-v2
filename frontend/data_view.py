@@ -258,7 +258,7 @@ class DataView(tk.Frame):
         
     def display_msg(self):
         # Display messagebox
-        ctk.set_appearance_mode('dark')
+        ctk.set_appearance_mode('light')
         CTkMessagebox(title="Data is being processed", 
                           message="Your data is being processed, and can be found in the user profiles once its done",
                           icon='check', option_1='OK')
