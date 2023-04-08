@@ -33,6 +33,10 @@ class DataReader(threading.Thread):
         
         # Initialise number of users
         self.n_users = n_users
+        
+        # Initialise calibration factors
+        self.calibration_factor1 = 0
+        self.calibration_factor2 = 0
 
         # Filter variables
         self.a = ApplicationSettings.ALPHA_VELOCITY_FILTER
@@ -61,20 +65,24 @@ class DataReader(threading.Thread):
             # port.readinto(received_bytes)
 
             # # Extract the force and velocity values
-            # force1, force2, velocity = struct.unpack_from('fff', received_bytes)
-            force1, force2, velocity = self.generate_random(self.n_users)
-            # force1 = 1
-            # force2 = 1
+            # self.force1, self.force2, velocity = struct.unpack_from('fff', received_bytes)
+            self.force1, self.force2, velocity = self.generate_random(self.n_users)
+            # self.force1 = 1
+            # self.force2 = 1
             # n_lines, velocity = struct.unpack('ff', received_bytes)
             # print(velocity)
+            
+            # Calibrate
+            self.force1 = self.force1 - self.calibration_factor1
+            self.force2 = self.force2 - self.calibration_factor2
 
             # Filter velocity
             # velocity_filtered = self.a * v + (1 - self.a) * velocity_old
             # velocity_old = velocity_filtered
 
             # Update the data dictionary
-            self.data['forces1'].append(force1)
-            self.data['forces2'].append(force2)
+            self.data['forces1'].append(self.force1)
+            self.data['forces2'].append(self.force2)
             self.data['velocities'].append(velocity)
             self.data['times'].append(packet_time)
             
@@ -82,7 +90,7 @@ class DataReader(threading.Thread):
             packet_time += (1 / ApplicationSettings.FREQUENCY)
 
             if self.n_users == 1:
-                self.combinedforces.append(max(force1, force2))
+                self.combinedforces.append(max(self.force1, self.force2))
 
             # Update running average and peakforce
             if self.n_users == 2:
@@ -103,7 +111,7 @@ class DataReader(threading.Thread):
                 if self.n_users == 1:
                     self.update_ui_vars_1p(self.combinedforces, velocity, self.peakforce, self.meanforce)
                 else:
-                    self.update_ui_vars_2p(force1, force2, velocity, self.peakforce)
+                    self.update_ui_vars_2p(self.force1, self.force2, velocity, self.peakforce)
                     
             t.sleep(ApplicationSettings.SLEEP_TIME)
 
@@ -150,3 +158,7 @@ class DataReader(threading.Thread):
             velocity = random.random() * 10
 
         return force1, force2, velocity
+    
+    def calibrate(self):
+        self.calibration_factor1 = self.force1
+        self.calibration_factor2 = self.force2

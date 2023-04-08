@@ -342,6 +342,8 @@ class powerboxApplication(ctk.CTk):
         for key, value in new_pbs.items():
             self.db.update_pb(usrID, key, value)
 
+    def update_calibration_factor(self):
+        self.measuring_thread.calibrate()
 class OptionDict(MutableMapping):
     def __init__(self, *args, **kwargs):
         self._data = dict(*args, **kwargs)

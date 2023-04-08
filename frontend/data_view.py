@@ -30,8 +30,8 @@ class DataView(tk.Frame):
         return
     
     def recalibrate(self):
-        # Todo: create simple calibration step somewhere (+c to data)
         print('recalibrate')
+        self.controller.update_calibration_factor()
         return
     
     def populate_navigation_bar(self):
