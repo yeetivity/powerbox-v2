@@ -281,9 +281,9 @@ class UserView(tk.Frame):
             self.fat_var.set(" - ")
             self.listbox_info_txt.configure(text_color=style.CLR_RED)
         else:
-            self.pf_var.set(userInfo[1][1])
-            self.mf_var.set(userInfo[1][2])
-            self.fat_var.set(userInfo[1][9])
+            self.pf_var.set(round(userInfo[1][1], 2))
+            self.mf_var.set(round(userInfo[1][2], 2))
+            self.fat_var.set(round(userInfo[1][9], 2))
             self.update_resultlist(userInfo[2])
         
          

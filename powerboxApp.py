@@ -265,10 +265,13 @@ class powerboxApplication(ctk.CTk):
         pbs = self.db.get_userpbs(model.userdetails['userID'])
         
         # Create comparison
-        comparison = self.analyser.compare_data(model.analyseddata, last_result, pbs)
+        comparison, new_pbs = self.analyser.compare_data(model.analyseddata, last_result, pbs)
         
         # Write to model
         model.compareddata = comparison
+
+        # Update database
+        self.update_db_pbs(new_pbs, model.userdetails['userID'])
 
         # Create pdf
         self.pdf_generator.create_pdf(model)
@@ -327,7 +330,18 @@ class powerboxApplication(ctk.CTk):
                 writer.writerow(dictionary.values())
 
         print("Successfully written to CSV")
-        
+
+    def update_db_pbs(self, new_pbs, usrID):
+        """
+        Loops through the dictionary of new_pbs and updates the database accordingly
+
+        :param new_pbs: new personal bests
+        :type new_pbs: dict
+        """
+
+        for key, value in new_pbs.items():
+            self.db.update_pb(usrID, key, value)
+
 class OptionDict(MutableMapping):
     def __init__(self, *args, **kwargs):
         self._data = dict(*args, **kwargs)

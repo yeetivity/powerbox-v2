@@ -201,3 +201,8 @@ class Database():
         self.conn.commit()
         return self.cur.lastrowid
         
+    def update_pb(self, usrID, pb_name, new_result):
+        query = f"UPDATE pbs SET {pb_name} = {new_result} WHERE userID = {usrID}"
+        self.cur.execute(query)
+        self.conn.commit()
+        return

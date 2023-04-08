@@ -75,43 +75,47 @@ class DataAnalyser():
         
     def compare_data(self, current_data, lastresult, personalbests):
         """
-        Compares two dictionaries of data and outputs their comparison
-        =INPUT=
-        current_data        dictionary with analysed values from requested measurement
-        lastresult          dictionary with analysed values from last result
-        personalbests       tuple with personal bests
-        
-        =OUTPUT=
-        comparison          dictionary with percentual comparison
-        new_pbs             dictionary with new personal bests
-        
-        =NOTE=
-        Create a new pb dictionary
+        Compares two dictionaries of data and outputs their comparison.
+
+        :param current_data: analyzed values from the inputted measurement
+        :type current_data: dict
+        :param lastresult: analyzed values from the last result of the user
+        :type lastresult: dict
+        :param personalbests: personal best values
+        :type personalbests: tuple
+        :return:    comparison: dictionary with percentual comparison
+                    new_pbs: dictionary with new personal bests
+        :rtype: dict
         """
+
+        # Initialise dictionaryies
+        comparison = {key: [0, 0] for key in current_data}
+        new_pbs = {}
+
+        pbs_up = {'peakforce', 'meanforce', 'best_rfd', 'power_avg', 'velocity_avg', 'distance', 'peak_acc', 'fatigability'}  # Personal bests that need to go up, to be better
+        pbs_down = {'timetopeakforce', 'timetofatigue'}  # Personal bests that need to go down, to be better
         
-        comparison = {}
+        pb_dict = dict(zip(list(current_data.keys()), personalbests[1:]))
         
-        pbs = list(personalbests)[1:]  # Transform to a list and remove the first key
-        keys = list(current_data)
+        for key, value in current_data.items():
+            lr_val = lastresult.get(key, 0)  # Value of last result
+            pb_val = pb_dict.get(key, 0)  # Value of personal best
+
+            # Comparison for last result
+            if lr_val != 0:
+                comparison[key][0] = (value * 100) / lr_val
+
+            # Comparison for personal best
+            if pb_val!= 0:
+                comparison[key][1] = (value * 100) / pb_val
+                if key in pbs_up and value > pb_val:
+                    new_pbs[key] = value
+                elif key in pbs_down and value < pb_val:
+                    new_pbs[key] = value
+            else:
+                new_pbs[key] = value
         
-        for key in keys:
-            lr_val = lastresult.get(key)
-            pb_val = pbs[keys.index(key)]
-            if lr_val is not None and pb_val is not None:
-                try:
-                    lr_compared = (current_data[key] * 100) / lr_val
-                except ZeroDivisionError:
-                    lr_compared = 0
-                try:
-                    #todo: fix for divide by zero that doesnt give zerodivisionerror
-                    pb_compared = (current_data[key] * 100) / pb_val
-                except ZeroDivisionError:
-                    pb_compared = 0
-                    
-                comparison[key] = [lr_compared if not math.isnan(lr_compared) else 0,
-                                   pb_compared if not math.isnan(pb_compared) else 0]
-        
-        return comparison
+        return comparison, new_pbs
 
         
         
