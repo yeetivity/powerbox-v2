@@ -45,19 +45,19 @@ class PDFGenerator():
         self.modeldate = model.sessiondetails['date']
         
         # Results #todo: put fatigue in the graphing
-        self.peakforce = str(round(model.analyseddata['peakforce'], 2)) + ' N'
+        self.peakforce = str(round(model.analyseddata['peakforce'], 2)) + ' kg'
         self.meanpower = str(round(model.analyseddata['power_avg'], 2)) + ' W'
-        self.fatigue = str(round(model.analyseddata['best_rfd'], 2)) + ' N/s'       
+        self.fatigue = str(round(model.analyseddata['fatigability'], 2)) + ' %'       
 
         # Personal bests comparison
         self.pb_pfrc = 'PB: ' + str(round(model.compareddata['peakforce'][1], 1)) + ' %'
         self.pb_apwr = 'PB: ' + str(round(model.compareddata['power_avg'][1], 1)) + ' %'
-        self.pb_fatigue = 'PB: ' + str(round(model.compareddata['best_rfd'][1], 1)) + ' %'
+        self.pb_fatigue = 'PB: ' + str(round(model.compareddata['fatigability'][1], 1)) + ' %'
         
         # Last result comparison
         self.lr_pfrc = 'LR: ' + str(round(model.compareddata['peakforce'][0], 1)) + ' %'
         self.lr_apwr = 'LR: ' + str(round(model.compareddata['power_avg'][0], 1)) + ' %'
-        self.lr_fatigue = 'LR: ' + str(round(model.compareddata['best_rfd'][0], 1)) + ' %'
+        self.lr_fatigue = 'LR: ' + str(round(model.compareddata['fatigability'][0], 1)) + ' %'
 
         # Data
         self.forcedata = model.rawdata['force']
@@ -76,8 +76,8 @@ class PDFGenerator():
         self.pdf.set_font('Ubuntu-R', '', 16)
         
         self.generate_titlebox()
-        # self.generate_graph()
         self.generate_analysis()
+        self.generate_graph()
 
         # Output pdf
         self.pdf.output(Paths.PATH_REPORT, 'F')
@@ -210,8 +210,8 @@ class PDFGenerator():
         self.pdf.cell(w=5, h=8, ln=0, fill=True, border=0)  # sidemargin
         self.pdf.cell(w=60, h=8, txt="PEAK FORCE", ln=0, fill=True, border=0, align='C')
         self.pdf.cell(w=60, h=8, txt="MEAN POWER", ln=0, fill=True, border=0, align='C')
-        self.pdf.cell(w=60, h=8, txt="FATIGUE", ln=0, fill=True, border=0, align='C')
-        self.pdf.cell(w=5, h=8, ln=0, fill=True, border=0)  # sidemargin
+        self.pdf.cell(w=60, h=8, txt="FATIGABILITY", ln=0, fill=True, border=0, align='C')
+        self.pdf.cell(w=5, h=8, ln=1, fill=True, border=0)  # sidemargin
 
         # Second row
         self.pdf.set_text_color(r=245, g=245, b=245)
@@ -220,7 +220,7 @@ class PDFGenerator():
         self.pdf.cell(w=60, h=12, txt=self.peakforce, ln=0, fill=True, border=0, align='C')
         self.pdf.cell(w=60, h=12, txt=self.meanpower, ln=0, fill=True, border=0, align='C')
         self.pdf.cell(w=60, h=12, txt=self.fatigue, ln=0, fill=True, border=0, align='C')
-        self.pdf.cell(w=5, h=12, ln=0, fill=True, border=0)  # sidemargin
+        self.pdf.cell(w=5, h=12, ln=1, fill=True, border=0)  # sidemargin
 
         # Third row
         self.pdf.set_font('Ubuntu-R', '', 12)
@@ -244,7 +244,7 @@ class PDFGenerator():
         self.set_color(self.pb_fatigue)
         self.pdf.cell(w=30, h=8, txt=self.pb_fatigue, ln=0, fill=True, border=0, align='C')
 
-        self.pdf.cell(w=5, h=8, ln=0, fill=True, border=0)  # sidemargin
+        self.pdf.cell(w=5, h=8, ln=1, fill=True, border=0)  # sidemargin
 
         # Spacer
         self.pdf.cell(w=190, h=1, txt="", ln=1, fill=True, border=0, align='L')
@@ -260,7 +260,7 @@ class PDF(FPDF):
     def header(self):
         #Add logos
         self.image(Paths.PATH_LOGO_PB_SMALL, x=122, y=7)
-        self.image(Paths.PATH_LOGO_RF_SMALL, x=16, y=7, w=70)
+        self.image(Paths.PATH_LOGO_RF_SMALL, x=16, y=5, w=70)
         self.set_draw_color(255, 255, 255)
         #Add custom font
         self.add_font('Ubuntu-L', '', '/usr/share/fonts/truetype/ubuntu/Ubuntu-L.ttf', uni=True)

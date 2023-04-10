@@ -269,6 +269,7 @@ class UserSelect(tk.Frame):
                                    height=7,
                                    listvariable=self.selected_item)
         self.userlist.grid(row=7, column=0, columnspan=4, padx=(50,0), pady=4, sticky='ew')
+        scrollbar.config(command=self.userlist.yview)
 
         for i in range(5):
             mid_frame.grid_columnconfigure(i, weight=1)
