@@ -36,7 +36,7 @@ class DataAnalyser():
         self.analyse_force(f, t)
         self.analysed['power_avg'] = np.average(p)
         self.analyse_velocity(v, t)
-        self.compute_fatigue()
+        self.compute_fatigue(p, f, t)
         
         # Write to model
         model.analyseddata = self.analysed
@@ -59,20 +59,35 @@ class DataAnalyser():
         a = np.diff(v) / np.diff(t)
         self.analysed['peak_acc'] = np.max(a)
     
-    def compute_fatigue(self):
-        # Todo: create algorithm for this
-        # Compute based on RFD
-        rfd_fatigue = 0
+    def compute_fatigue(self, p, f, t):
+        # Todo: implement RFD algorithm
+        if round(np.mean(p),1) == 0.0:
+            reference = f
+        else:
+            reference = p
+
+        # Step 1: trim data
+        # Step 1a: round data for better trimming
+        reference_rounded = [self.custom_round(num, 5) for num in reference]
+        # Step 1b: detect non-zero elements and determine first and last
+        nonzero_indices = np.nonzero(reference_rounded)[0]
+        # Step 1c: trim reference and time
+        reference = reference[nonzero_indices[0]:nonzero_indices[-1]]
+        t_trimmed = t[nonzero_indices[0]:nonzero_indices[-1]]
+
+        # Step 2: Compute linear trend
+        coefficients = np.polyfit(t_trimmed, reference, 1)  # Fit a first-degree polynomial
+        trend = np.polyval(coefficients, t)
+
+        # Step 3: compute decline percentage
+        self.analysed['fatigability'] = round((trend[-1] * 100 / trend[0]), 2)
         
-        # Compute based on power
-        pwr_fatigue = 0
-        
-        # Combine
-        fatigue = 0
-        
-        self.analysed['fatigability'] = fatigue
-        self.analysed['timetofatigue'] = 10000
-        
+        self.analysed['timetofatigue'] = 42
+    
+    def custom_round(x, base=5):
+        """ Custom rounding method that can round based on different bases """
+        return base * round(x/base)
+
     def compare_data(self, current_data, lastresult, personalbests):
         """
         Compares two dictionaries of data and outputs their comparison.
