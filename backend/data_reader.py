@@ -42,10 +42,10 @@ class DataReader(threading.Thread):
         self.alpha = ApplicationSettings.ALPHA_VELOCITY_FILTER
 
         # Calibration variables
-        self.A1 = 
-        self.A2 = 
-        self.B1 = 
-        self.B2 = 
+        self.A1 = -3.20061411300997e-05
+        self.A2 = -3.4567490506012004e-05
+        self.B1 = -5.3303520315288 + 4.67418
+        self.B2 = -1.52071926256712 
 
     def run(self):
         """
@@ -72,8 +72,8 @@ class DataReader(threading.Thread):
             velocity, self.force1, self.force2 = struct.unpack_from('fff', received_bytes)
             
             # Calibrate
-            self.force1 = self.force1 - self.calibration_factor1
-            self.force2 = self.force2 - self.calibration_factor2
+            self.force1 = self.A1 * self.force1 + self.B1 - self.calibration_factor1
+            self.force2 = self.A2 * self.force2 + self.B2 - self.calibration_factor2
 
             # Filter velocity
             velocity_filtered = self.alpha * velocity + (1 - self.alpha) * velocity_old
@@ -133,11 +133,11 @@ class DataReader(threading.Thread):
     def get_data(self, n_users):
         """ Method to receive data saved in the class """
         if n_users == 1:
-            powers = np.multiply(self.combinedforces, self.data['velocities'])
+            powers = np.abs(np.multiply(self.combinedforces, self.data['velocities']))
             return ((self.combinedforces, self.data['velocities'], powers, self.data['times']),)
         else:
-            powers1 = np.multiply(self.data['forces1'], self.data['velocities'])
-            powers2 = np.multiply(self.data['forces2'], self.data['velocities'])
+            powers1 = np.abs(np.multiply(self.data['forces1'], self.data['velocities']))
+            powers2 = np.abs(np.multiply(self.data['forces2'], self.data['velocities']))
             return ((self.data['forces1'], self.data['velocities'], powers1, self.data['times']),
                     (self.data['forces2'], self.data['velocities'], powers2, self.data['times']))
 

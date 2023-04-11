@@ -84,7 +84,7 @@ class DataAnalyser():
         
         self.analysed['timetofatigue'] = 42
     
-    def custom_round(x, base=5):
+    def custom_round(self, x, base=5):
         """ Custom rounding method that can round based on different bases """
         return base * round(x/base)
 

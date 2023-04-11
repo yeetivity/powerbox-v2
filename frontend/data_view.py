@@ -85,7 +85,7 @@ class DataView(tk.Frame):
                             highlightthickness=1, highlightcolor=style.CLR_ONBACKGROUND)
         tl_frame.place(anchor='nw', x=24, y=64)
 
-        time_txt = tk.Label(tl_frame, text="TIME", font= style.FNT_CAPTION,
+        time_txt = tk.Label(tl_frame, text="TIME [s]", font= style.FNT_CAPTION,
                             bg= style.CLR_PRIMARY, fg= style.CLR_ONBACKGROUND, height = 16)
         time_txt.place(anchor='ne', x=364, y=0, height=16)
         
@@ -99,7 +99,7 @@ class DataView(tk.Frame):
                             highlightthickness=1, highlightcolor=style.CLR_ONBACKGROUND)
         tr_frame.place(anchor='nw', x=384+24, y=0+64)
 
-        pf_txt = tk.Label(tr_frame, text="PEAK FORCE", font= style.FNT_CAPTION,
+        pf_txt = tk.Label(tr_frame, text="PEAK FORCE [kg]", font= style.FNT_CAPTION,
                             bg= style.CLR_PRIMARY, fg= style.CLR_ONBACKGROUND, height = 16)
         pf_txt.place(anchor='ne', x=364, y=0, height=16)
         
@@ -113,7 +113,7 @@ class DataView(tk.Frame):
                             highlightthickness=1, highlightcolor= style.CLR_ONBACKGROUND)
         mr_frame.place(anchor='nw', x=384+24, y=138+64)
 
-        watt_txt = tk.Label(mr_frame, text="POWER", font= style.FNT_CAPTION,
+        watt_txt = tk.Label(mr_frame, text="POWER [W]", font= style.FNT_CAPTION,
                             bg= style.CLR_PRIMARY, fg= style.CLR_ONBACKGROUND, height = 16)
         watt_txt.place(anchor='ne', x=364, y=0, height=16)
         
@@ -128,7 +128,7 @@ class DataView(tk.Frame):
                             highlightthickness=1, highlightcolor= style.CLR_ONBACKGROUND)
         ml_frame.place(anchor='nw', x=0+24, y=138+64)
 
-        mf_txt = tk.Label(ml_frame, text="MEAN FORCE", font= style.FNT_CAPTION,
+        mf_txt = tk.Label(ml_frame, text="MEAN FORCE [kg]", font= style.FNT_CAPTION,
                             bg= style.CLR_PRIMARY, fg= style.CLR_ONBACKGROUND, height = 16)
         mf_txt.place(anchor='ne', x=364, y=0, height=16)
         
@@ -157,7 +157,7 @@ class DataView(tk.Frame):
                             highlightthickness=0, highlightcolor=style.CLR_BLACK)
         tl_frame.place(anchor='nw', x=24, y=64)
        
-        time_txt = tk.Label(tl_frame, text="TIME", font= style.FNT_CAPTION,
+        time_txt = tk.Label(tl_frame, text="TIME [s]", font= style.FNT_CAPTION,
                             bg=clr_tl, fg= style.CLR_ONBACKGROUND, height = 16)
         time_txt.place(anchor='nw', x=4, y=0, height=16)
         
@@ -172,7 +172,7 @@ class DataView(tk.Frame):
                             highlightthickness=0, highlightcolor=style.CLR_BLACK)
         tr_frame.place(anchor='nw', x=384+24, y=0+64)
 
-        velocity_txt = tk.Label(tr_frame, text="VELOCITY", font= style.FNT_CAPTION,
+        velocity_txt = tk.Label(tr_frame, text="VELOCITY [m/s]", font= style.FNT_CAPTION,
                             bg=clr_tr, fg= style.CLR_ONBACKGROUND, height = 16)
         velocity_txt.place(anchor='ne', x=364, y=0, height=16)
         
@@ -187,7 +187,7 @@ class DataView(tk.Frame):
                             highlightthickness=1, highlightcolor= style.CLR_ONBACKGROUND)
         mr_frame.place(anchor='nw', x=384+24, y=138+64)
 
-        force2_txt = tk.Label(mr_frame, text="FORCE 2", font= style.FNT_CAPTION,
+        force2_txt = tk.Label(mr_frame, text="FORCE 2 [kg]", font= style.FNT_CAPTION,
                             bg=clr_user2, fg= style.CLR_ONBACKGROUND, height = 16)
         force2_txt.place(anchor='ne', x=364, y=0, height=16)
         
@@ -202,7 +202,7 @@ class DataView(tk.Frame):
                             highlightthickness=1, highlightcolor= style.CLR_ONBACKGROUND)
         ml_frame.place(anchor='nw', x=0+24, y=138+64)
 
-        force1_txt = tk.Label(ml_frame, text="FORCE 1", font= style.FNT_CAPTION,
+        force1_txt = tk.Label(ml_frame, text="FORCE 1 [kg]", font= style.FNT_CAPTION,
                             bg=clr_user1, fg= style.CLR_ONBACKGROUND, height = 16)
         force1_txt.place(anchor='nw', x=4, y=0, height=16)
         
@@ -216,7 +216,7 @@ class DataView(tk.Frame):
                             highlightthickness=1, highlightcolor=style.CLR_ONBACKGROUND)
         bl_frame.place(anchor='nw', x=0+24, y=276+64)
 
-        pf1_txt = tk.Label(bl_frame, text="PEAKFORCE 1", font= style.FNT_CAPTION,
+        pf1_txt = tk.Label(bl_frame, text="PEAKFORCE 1 [kg]", font= style.FNT_CAPTION,
                             bg=clr_user1, fg= style.CLR_ONBACKGROUND, height = 16)
         pf1_txt.place(anchor='nw', x=4, y=0, height=16)
         
@@ -230,7 +230,7 @@ class DataView(tk.Frame):
                             highlightthickness=1, highlightcolor= style.CLR_ONBACKGROUND)
         br_frame.place(anchor='nw', x=384+24, y=276+64)
 
-        pf2_txt = tk.Label(br_frame, text="PEAKFORCE 2", font= style.FNT_CAPTION,
+        pf2_txt = tk.Label(br_frame, text="PEAKFORCE 2 [kg]", font= style.FNT_CAPTION,
                             bg=clr_user2, fg= style.CLR_ONBACKGROUND, height = 16)
         pf2_txt.place(anchor='ne', x=364, y=0, height=16)
         
