@@ -97,7 +97,7 @@ class ApplicationSettings():
     FREQUENCY = 10  # Hz
     SLEEP_TIME = 0.1 # s    1/FREQUENCY
     
-    ALPHA_VELOCITY_FILTER = 0.1
+    ALPHA_VELOCITY_FILTER = 0.4
 
-    UPDATE_TIME_FREQUENCY = 2  # Hz
+    UPDATE_TIME_FREQUENCY = 1  # Hz
     UPDATE_VARS_FREQUENCY = 2  # Hz

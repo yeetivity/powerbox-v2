@@ -39,7 +39,13 @@ class DataReader(threading.Thread):
         self.calibration_factor2 = 0
 
         # Filter variables
-        self.a = ApplicationSettings.ALPHA_VELOCITY_FILTER
+        self.alpha = ApplicationSettings.ALPHA_VELOCITY_FILTER
+
+        # Calibration variables
+        self.A1 = 
+        self.A2 = 
+        self.B1 = 
+        self.B2 = 
 
     def run(self):
         """
@@ -52,33 +58,26 @@ class DataReader(threading.Thread):
         packet_time = 0
         velocity_old = 0
 
-        # TODO: UNCOMMENT WHEN CONNECTED TO PI PICO
         # Setup serial readout
-        # port = serial.Serial('/dev/ttyACM0')
-        # port.flushInput()
+        port = serial.Serial('/dev/ttyACM0')
+        port.flushInput()
 
-        # received_bytes = bytearray(8)
+        received_bytes = bytearray(12)
 
         while not self.stop_flag.is_set():
-            # TODO: UNCOMMENT WHEN CONNECTED TO PI PICO
             # Read the received bytes into the bytearray
-            # port.readinto(received_bytes)
+            port.readinto(received_bytes)
 
-            # # Extract the force and velocity values
-            # self.force1, self.force2, velocity = struct.unpack_from('fff', received_bytes)
-            self.force1, self.force2, velocity = self.generate_random(self.n_users)
-            # self.force1 = 1
-            # self.force2 = 1
-            # n_lines, velocity = struct.unpack('ff', received_bytes)
-            # print(velocity)
+            # Extract the force and velocity values
+            velocity, self.force1, self.force2 = struct.unpack_from('fff', received_bytes)
             
             # Calibrate
             self.force1 = self.force1 - self.calibration_factor1
             self.force2 = self.force2 - self.calibration_factor2
 
             # Filter velocity
-            # velocity_filtered = self.a * v + (1 - self.a) * velocity_old
-            # velocity_old = velocity_filtered
+            velocity_filtered = self.alpha * velocity + (1 - self.alpha) * velocity_old
+            velocity_old = velocity_filtered
 
             # Update the data dictionary
             self.data['forces1'].append(self.force1)
@@ -92,7 +91,7 @@ class DataReader(threading.Thread):
             if self.n_users == 1:
                 self.combinedforces.append(max(self.force1, self.force2))
 
-            # Update running average and peakforce
+            # Update average and peakforce
             if self.n_users == 2:
                 self.meanforce[0] = np.mean(self.data['forces1'])
                 self.meanforce[1] = np.mean(self.data['forces2'])
@@ -102,18 +101,18 @@ class DataReader(threading.Thread):
                 self.meanforce[0] = np.mean(self.combinedforces)
                 self.peakforce[0] = np.mean(self.combinedforces)
 
-            # Update time on 8 Hz
+            # Update time on 1 Hz
             if round(packet_time, 3) % (1 / ApplicationSettings.UPDATE_TIME_FREQUENCY) == 0:
                 self.update_ui_time(packet_time)
             
-            # Update vars on 4 Hz
+            # Update vars on 2 Hz
             if round(packet_time, 3) % (1 / ApplicationSettings.UPDATE_VARS_FREQUENCY) == 0:
                 if self.n_users == 1:
                     self.update_ui_vars_1p(self.combinedforces, velocity, self.peakforce, self.meanforce)
                 else:
                     self.update_ui_vars_2p(self.force1, self.force2, velocity, self.peakforce)
                     
-            t.sleep(ApplicationSettings.SLEEP_TIME)
+            # t.sleep(ApplicationSettings.SLEEP_TIME)
 
     def update_ui_time(self, packet_time):
         self.ui.display_time(packet_time)
