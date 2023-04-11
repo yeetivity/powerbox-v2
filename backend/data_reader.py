@@ -133,11 +133,11 @@ class DataReader(threading.Thread):
     def get_data(self, n_users):
         """ Method to receive data saved in the class """
         if n_users == 1:
-            powers = np.abs(np.multiply(self.combinedforces, self.data['velocities']))
+            powers = [force * 9.81 * abs(velocity) for force, velocity in zip(self.combinedforces, self.velocities)]
             return ((self.combinedforces, self.data['velocities'], powers, self.data['times']),)
         else:
-            powers1 = np.abs(np.multiply(self.data['forces1'], self.data['velocities']))
-            powers2 = np.abs(np.multiply(self.data['forces2'], self.data['velocities']))
+            powers1 = [force * 9.81 * abs(velocity) for force, velocity in zip(self.data['forces1'], self.velocities)]
+            powers2 = [force * 9.81 * abs(velocity) for force, velocity in zip(self.data['forces2'], self.velocities)]
             return ((self.data['forces1'], self.data['velocities'], powers1, self.data['times']),
                     (self.data['forces2'], self.data['velocities'], powers2, self.data['times']))
 

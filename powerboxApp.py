@@ -220,8 +220,9 @@ class powerboxApplication(ctk.CTk):
             self.measuring_thread.stop()
             print('Thread stopped')
             try:
+                time.sleep(0.2)
                 self.measuring_thread.join()
-                time.sleep(0.5)
+                time.sleep(0.2)
                 print('Thread closed')
             except Exception as e:
                 # Print the details of the exception
@@ -250,7 +251,7 @@ class powerboxApplication(ctk.CTk):
         return userID
 
     def db_sessiondetails_to_models(self, sessiondetails):
-        #This is specifically for one user
+        # This is specifically for one user
         self.models[0].set_sessiondetails(sessiondetails)
 
     def session_details_to_model(self, sessiondetails):
@@ -271,14 +272,17 @@ class powerboxApplication(ctk.CTk):
         # Overwrite default personal bests in database
         self.update_db_pbs(model.analyseddata, model.userdetails['userID'])
         
-        # Create pdf
-        self.pdf_generator.create_pdf(model)
-        
-        # Update resultview (first check if we are seeing resultview)
-        if isinstance(self.fstack[-1], ResultView):
-            self.fstack[-1].update_pdf()
+        if self.options['n_users'] == 1:
+            # Create pdf
+            self.pdf_generator.create_pdf(model)
+            
+            # Update resultview (first check if we are seeing resultview)
+            if isinstance(self.fstack[-1], ResultView):
+                self.fstack[-1].update_pdf()
+            else:
+                print("Analysis done before the resultview was triggered")
         else:
-            print("Analysis done before the resultview was triggered")
+            self.home()
         
     def start_comparison(self, model):
         # Note: runs in thread
@@ -301,14 +305,15 @@ class powerboxApplication(ctk.CTk):
         # Update database
         self.update_db_pbs(new_pbs, model.userdetails['userID'])
 
-        # Create pdf
-        self.pdf_generator.create_pdf(model)
-        
-        # Update resultview (first check if we are seeing resultview)
-        if isinstance(self.fstack[-1], ResultView):
-            self.fstack[-1].update_pdf()
-        else:
-            print("Analysis done before the resultview was triggered")
+        if self.options['n_users'] == 1:
+            # Create pdf
+            self.pdf_generator.create_pdf(model)
+            
+            # Update resultview (first check if we are seeing resultview)
+            if isinstance(self.fstack[-1], ResultView):
+                self.fstack[-1].update_pdf()
+            else:
+                print("Analysis done before the resultview was triggered")
             
     def send_email(self, receiver):
         username, date, resultID = self.models[0].get_details_for_email()

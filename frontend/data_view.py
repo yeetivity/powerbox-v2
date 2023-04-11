@@ -142,7 +142,7 @@ class DataView(tk.Frame):
                                 highlightthickness=1, highlightcolor= style.CLR_ONBACKGROUND)
         b_frame.place(anchor='nw', x=0+24 , y=276+64)
 
-        mf_txt = tk.Label(b_frame, text="FORCE", font= style.FNT_CAPTION,
+        mf_txt = tk.Label(b_frame, text="FORCE [kg]", font= style.FNT_CAPTION,
                             bg= style.CLR_PRIMARY, fg= style.CLR_ONBACKGROUND, height = 16)
         mf_txt.place(anchor='ne', x=746, y=0, height=16)
         return
