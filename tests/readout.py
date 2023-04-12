@@ -23,11 +23,7 @@ while True:
     ser_bytes = ser.read(12)
     # decoded_bytes = float(ser_bytes[0:len(ser_bytes)-2].decode("utf-8"))
     v, f1, f2 = struct.unpack('fff', ser_bytes)
-
-    force.append(f1)
-
-    if t.time() - start_time > 10:
-        break
+    print(v, f1, f2)
     
 print('n packets: ', len(force))
 
