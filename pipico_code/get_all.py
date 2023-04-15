@@ -1,110 +1,100 @@
-from rotary_optimized import Rotary
-import utime
+from rotary_irq_rp2 import RotaryIRQ
+import utime, struct, sys
 from machine import Pin, Timer
 from hx711 import hx711
-import struct, gc, sys, _thread
+
+#######################################################
+##   SETTINGS
+#######################################################
+
+led = Pin(25, Pin.OUT)  # On-board LED
+
+DT_FL = 14  # Data pin, force sensor left
+CLK_FL = 15  # Cock pin, force sensor left
+
+DT_FR = 16  # Data pin, force sensor left
+CLK_FR = 17  # Cock pin, force sensor left
+
+S1_V = 3  # Signal one, rotary encoder
+S2_V = 2  # Signal two, rotary encoder
+
+FREQ_F = 80  # Frequency for force acquirement
+FREQ_V = 10  # Frequency for velocity acquirement
+
+nlines_old, sample_nr, velocity = 0, 0, 0.0  # Initializing variables
+
+#----------------------
+#  COMPUTING CONSTANTS
+#----------------------
+TIMER_INTERVAL_US = 1000000 / FREQ_F  # Time in microseconds for each sample
+R_DOWNSAMPLE = FREQ_F/FREQ_V  # Ratio to downsample with
 
 
 #######################################################
 ##   SETUP
 #######################################################
 
-# Initialize on-board LED
-led = Pin(25, Pin.OUT)
+rotary = RotaryIRQ(pin_num_clk=S1_V,
+                   pin_num_dt=S2_V,
+                   reverse=False,
+                   range_mode=RotaryIRQ.RANGE_UNBOUNDED)
 
-# Initialize variables
-force1, force2, velocity, lines_moved, sample_nr = 0.0, 0.0, 0.0, 0, 0
-
-# Initialize constants
-FREQ_S = 80
-DOWNSAMPLE = 8  # Ratio to downsample velocity with
+adc_left = hx711(Pin(DT_FL), Pin(CLK_FL), 0)
+adc_right = hx711(Pin(DT_FR), Pin(CLK_FR), 4)
 
 #######################################################
-##   COMPUTE VARIABLE THINGIES
+##   STARTUP
 #######################################################
-TIMER_INTERVAL_US = 1000000 / FREQ_S
 
-# Create buffer for message
-# msg_buf = bytearray(struct.calcsize("fff"))
+# Show start sequence leds
+for i in range(3):
+    led.toggle
+    utime.sleep_us(500000)
 
-# Initialize rotary class with signal 1 and signal 2 pin
-rotary = Rotary(2, 3)
+# Power up adcs
+adc_left.set_power(hx711.power.pwr_up)
+adc_right.set_power(hx711.power.pwr_up)
 
-# Initialize HX711 objects
-hx1 = hx711(Pin(14), Pin(15), 0)
-hx2 = hx711(Pin(16), Pin(17), 4)
+# Set gains
+def set_gain(adc):
+    adc.set_gain(hx711.gain.gain_64)
+    adc.set_power(hx711.power.pwr_down)
+    hx711.wait_power_down()
+    adc.set_power(hx711.power.pwr_up)
 
-# 2. power up
-hx1.set_power(hx711.power.pwr_up)
-hx2.set_power(hx711.power.pwr_up)
+set_gain(adc=adc_left)
+set_gain(adc=adc_right)
 
-# 3. [OPTIONAL] set gain and save it to the hx711
-# chip by powering down then back up
-hx1.set_gain(hx711.gain.gain_64)
-hx1.set_power(hx711.power.pwr_down)
-hx711.wait_power_down()
-hx1.set_power(hx711.power.pwr_up)
-
-hx2.set_gain(hx711.gain.gain_64)
-hx2.set_power(hx711.power.pwr_down)
-hx711.wait_power_down()
-hx2.set_power(hx711.power.pwr_up)
-
-# 4. wait for readings to settle
+# Wait for readings to settle
 hx711.wait_settle(hx711.rate.rate_80)
 
-
 ############################
-# HELPER METHODS
+# RUN METHODS
 ############################
-
-def force_thread():
-    global force1
-    global force2
-
-    while True:
-        force1 = hx1.get_value()
-        force2 = hx2.get_value()
-        utime.sleep_us(12500)
-
-def rotary_changed(change):
-    global lines_moved
-    lines_moved += change
 
 def pack_message(velocity, force_1, force_2):
     return struct.pack("fff", velocity, force_1, force_2)
     
 def run():
-    led.toggle()
-    global lines_moved
+    global nlines_old
     global sample_nr
     global velocity
-    
-#     velocity = lines_moved * 0.0031415926535897933 * 10
-#     lines_moved = 0
-#     sys.stdout.buffer.write(pack_message(velocity, force1, force2))
 
-    if sample_nr % DOWNSAMPLE == 0:
-        # Transform lines moved to velocity
-        velocity = lines_moved * 0.031415926535897933 
-        lines_moved = 0
-        
-    
+    led.toggle()
+
+    if sample_nr % R_DOWNSAMPLE == 0:
+        lines_moved = rotary.value()   # Get current reading
+        displacement = lines_moved - nlines_old  # Compute displacement 
+        nlines_old = lines_moved  # Update previous reading
+        velocity = displacement * 0.031415926535897933
+
+    force_left = adc_left.get_value()
+    force_right = adc_right.get_value()
     sample_nr += 1
-    sys.stdout.buffer.write(pack_message(lines_moved, force1, force2))
-
-###########################
-# MAIN
-###########################
+        
+    sys.stdout.buffer.write(pack_message(velocity, force_left, force_right))
 
 def main():
-    """
-    Some comment
-    """
-    rotary.add_handler(rotary_changed)
-
-    _thread.start_new_thread(force_thread, ())
-
     start_time = utime.ticks_us()
     last_interval_time = start_time
     
@@ -116,7 +106,3 @@ def main():
             last_interval_time = current_time
     
 main()
-
-
-
-
