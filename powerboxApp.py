@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 This file is the main controller of the powerBox-v2 application
 All frontend is built with Gtk4, a gnome linux GUI framework
