@@ -128,7 +128,9 @@ class Home(tk.Frame):
         self.btn_doubleuser.place(x=149, y=14)
         
         if self.controller.options['n_users'] == 2:
-            self.btn_switch_usernr.configure(image=self.IC_DOUBLEUSER)
+            self.toggle_doubleuser()
+        else:
+            self.toggle_singleuser()
         
         btn_create_user = ctk.CTkButton(master=self,
                                         width=60,

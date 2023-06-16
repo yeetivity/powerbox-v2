@@ -283,7 +283,7 @@ class UserView(tk.Frame):
             self.fat_var.set(" - ")
             self.listbox_info_txt.configure(text_color=style.CLR_RED)
         else:
-            self.pf_var.set(str(round(userInfo[1][1], 2)), " kg")
+            self.pf_var.set(str(round(userInfo[1][1], 2)) + " kg")
             self.mf_var.set(str(round(userInfo[1][2], 2)) + " kg")
             self.fat_var.set(str(round(userInfo[1][9], 2)) + " %")
             self.update_resultlist(userInfo[2])

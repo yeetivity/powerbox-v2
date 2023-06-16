@@ -4,8 +4,9 @@ Sends out regular data updates to the UI
 Runs on its own thread
 
 Author: Jitse van Esch
-Date: 24-03-23
+Date: 16-06-23
 """
+
 import serial, struct
 import time as t
 import numpy as np
@@ -38,8 +39,17 @@ class DataReader(threading.Thread):
         self.calibration_factor1 = 0
         self.calibration_factor2 = 0
 
+        # Initialise a port
+        self.port = None
+
         # Filter variables
-        self.a = ApplicationSettings.ALPHA_VELOCITY_FILTER
+        self.alpha = ApplicationSettings.ALPHA_VELOCITY_FILTER
+
+        # Calibration variables
+        self.A1 = -3.20061411300997e-05
+        self.A2 = -3.4567490506012004e-05
+        self.B1 = -5.3303520315288 + 4.67418
+        self.B2 = -1.52071926256712 
 
     def run(self):
         """
@@ -52,33 +62,38 @@ class DataReader(threading.Thread):
         packet_time = 0
         velocity_old = 0
 
-        # TODO: UNCOMMENT WHEN CONNECTED TO PI PICO
         # Setup serial readout
-        # port = serial.Serial('/dev/ttyACM0')
-        # port.flushInput()
+        try:
+            self.port = serial.Serial('/dev/ttyACM0')
+            self.port.flushInput()
+        except Exception as e:
+            # Set the flag and stop the thread
+            self.EXCEPTION_NO_PERIPHERAL = True
+            self.stop()
+            return
 
-        # received_bytes = bytearray(8)
+        received_bytes = bytearray(12)
 
         while not self.stop_flag.is_set():
-            # TODO: UNCOMMENT WHEN CONNECTED TO PI PICO
             # Read the received bytes into the bytearray
-            # port.readinto(received_bytes)
+            try:
+                self.port.readinto(received_bytes)
+            except serial.SerialException:
+                # Set the flag and stop the thread
+                self.EXCEPTION_NO_DATA = True
+                self.stop()
+                return
 
-            # # Extract the force and velocity values
-            # self.force1, self.force2, velocity = struct.unpack_from('fff', received_bytes)
-            self.force1, self.force2, velocity = self.generate_random(self.n_users)
-            # self.force1 = 1
-            # self.force2 = 1
-            # n_lines, velocity = struct.unpack('ff', received_bytes)
-            # print(velocity)
+            # Extract the force and velocity values
+            velocity, self.force1, self.force2 = struct.unpack_from('fff', received_bytes)
             
             # Calibrate
-            self.force1 = self.force1 - self.calibration_factor1
-            self.force2 = self.force2 - self.calibration_factor2
+            self.force1 = self.A1 * self.force1 + self.B1 - self.calibration_factor1
+            self.force2 = self.A2 * self.force2 + self.B2 - self.calibration_factor2
 
             # Filter velocity
-            # velocity_filtered = self.a * v + (1 - self.a) * velocity_old
-            # velocity_old = velocity_filtered
+            velocity_filtered = self.alpha * velocity + (1 - self.alpha) * velocity_old
+            velocity_old = velocity_filtered
 
             # Update the data dictionary
             self.data['forces1'].append(self.force1)
@@ -92,7 +107,7 @@ class DataReader(threading.Thread):
             if self.n_users == 1:
                 self.combinedforces.append(max(self.force1, self.force2))
 
-            # Update running average and peakforce
+            # Update average and peakforce
             if self.n_users == 2:
                 self.meanforce[0] = np.mean(self.data['forces1'])
                 self.meanforce[1] = np.mean(self.data['forces2'])
@@ -102,18 +117,16 @@ class DataReader(threading.Thread):
                 self.meanforce[0] = np.mean(self.combinedforces)
                 self.peakforce[0] = np.mean(self.combinedforces)
 
-            # Update time on 8 Hz
+            # Update time on 1 Hz
             if round(packet_time, 3) % (1 / ApplicationSettings.UPDATE_TIME_FREQUENCY) == 0:
                 self.update_ui_time(packet_time)
             
-            # Update vars on 4 Hz
+            # Update vars on 2 Hz
             if round(packet_time, 3) % (1 / ApplicationSettings.UPDATE_VARS_FREQUENCY) == 0:
                 if self.n_users == 1:
                     self.update_ui_vars_1p(self.combinedforces, velocity, self.peakforce, self.meanforce)
                 else:
                     self.update_ui_vars_2p(self.force1, self.force2, velocity, self.peakforce)
-                    
-            t.sleep(ApplicationSettings.SLEEP_TIME)
 
     def update_ui_time(self, packet_time):
         self.ui.display_time(packet_time)
@@ -130,34 +143,22 @@ class DataReader(threading.Thread):
 
     def stop(self):
         self.stop_flag.set()
+
+        # Close the serial port connection
+        if self.port is not None:
+            self.port.close()
+
         
     def get_data(self, n_users):
         """ Method to receive data saved in the class """
         if n_users == 1:
-            powers = np.multiply(self.combinedforces, self.data['velocities'])
+            powers = [force * 9.81 * abs(velocity) for force, velocity in zip(self.combinedforces, self.velocities)]
             return ((self.combinedforces, self.data['velocities'], powers, self.data['times']),)
         else:
-            powers1 = np.multiply(self.data['forces1'], self.data['velocities'])
-            powers2 = np.multiply(self.data['forces2'], self.data['velocities'])
+            powers1 = [force * 9.81 * abs(velocity) for force, velocity in zip(self.data['forces1'], self.velocities)]
+            powers2 = [force * 9.81 * abs(velocity) for force, velocity in zip(self.data['forces2'], self.velocities)]
             return ((self.data['forces1'], self.data['velocities'], powers1, self.data['times']),
                     (self.data['forces2'], self.data['velocities'], powers2, self.data['times']))
-
-    def generate_random(self, n_users):
-        if n_users == 1:
-            if random.random() < 0.5:
-                force1 = random.random() * 10
-                force2 = 0
-                velocity = random.random() * 10
-            else:
-                force2 = random.random() * 10
-                force1 = 0
-                velocity = -1 * random.random() * 10
-        else:
-            force1 = random.random() * 10
-            force2 = random.random() * 10
-            velocity = random.random() * 10
-
-        return force1, force2, velocity
     
     def calibrate(self):
         self.calibration_factor1 = self.force1

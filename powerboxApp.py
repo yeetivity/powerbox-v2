@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 This file is the main controller of the powerBox-v2 application
 All frontend is built with Gtk4, a gnome linux GUI framework
@@ -195,9 +196,18 @@ class powerboxApplication(ctk.CTk):
     def stop_measurement(self):
         self.stop_measurement_thread() # Stops the thread
         
+        print("Succesfully stopped")
         if self.options['start_mode'] == 1:
             # If default start mode, save data to model
-            data = self.measuring_thread.get_data(self.options['n_users'])
+            try:
+                data = self.measuring_thread.get_data(self.options['n_users'])
+            except:
+                # Show dialog
+                self.fstack[-1].display_errormsg()
+                # Go home
+                self.home()
+                return
+
             # Create a box for the analysis threads
             self.analyser_threads = [None, None]
             for i in range(self.options['n_users']):
@@ -216,11 +226,10 @@ class powerboxApplication(ctk.CTk):
             self.home()
     
     def stop_measurement_thread(self):
-        if self.measuring_thread != None:
+        if self.measuring_thread is not None:
             self.measuring_thread.stop()
-            self.measuring_thread.join()
-            print('Thread closed')
-    
+            print('Thread stopped')
+
     def get_users(self, filter1=None, filter2=None):
         return self.db.get_users(filter1, filter2)
     
@@ -240,7 +249,7 @@ class powerboxApplication(ctk.CTk):
         return userID
 
     def db_sessiondetails_to_models(self, sessiondetails):
-        #This is specifically for one user
+        # This is specifically for one user
         self.models[0].set_sessiondetails(sessiondetails)
 
     def session_details_to_model(self, sessiondetails):
@@ -261,14 +270,17 @@ class powerboxApplication(ctk.CTk):
         # Overwrite default personal bests in database
         self.update_db_pbs(model.analyseddata, model.userdetails['userID'])
         
-        # Create pdf
-        self.pdf_generator.create_pdf(model)
-        
-        # Update resultview (first check if we are seeing resultview)
-        if isinstance(self.fstack[-1], ResultView):
-            self.fstack[-1].update_pdf()
+        if self.options['n_users'] == 1:
+            # Create pdf
+            self.pdf_generator.create_pdf(model)
+            
+            # Update resultview (first check if we are seeing resultview)
+            if isinstance(self.fstack[-1], ResultView):
+                self.fstack[-1].update_pdf()
+            else:
+                print("Analysis done before the resultview was triggered")
         else:
-            print("Analysis done before the resultview was triggered")
+            self.home()
         
     def start_comparison(self, model):
         # Note: runs in thread
@@ -291,14 +303,15 @@ class powerboxApplication(ctk.CTk):
         # Update database
         self.update_db_pbs(new_pbs, model.userdetails['userID'])
 
-        # Create pdf
-        self.pdf_generator.create_pdf(model)
-        
-        # Update resultview (first check if we are seeing resultview)
-        if isinstance(self.fstack[-1], ResultView):
-            self.fstack[-1].update_pdf()
-        else:
-            print("Analysis done before the resultview was triggered")
+        if self.options['n_users'] == 1:
+            # Create pdf
+            self.pdf_generator.create_pdf(model)
+            
+            # Update resultview (first check if we are seeing resultview)
+            if isinstance(self.fstack[-1], ResultView):
+                self.fstack[-1].update_pdf()
+            else:
+                print("Analysis done before the resultview was triggered")
             
     def send_email(self, receiver):
         username, date, resultID = self.models[0].get_details_for_email()

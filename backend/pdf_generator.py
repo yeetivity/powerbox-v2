@@ -69,8 +69,8 @@ class PDFGenerator():
         self.pdf.add_page()
 
         # Add custom font
-        self.pdf.add_font('Ubuntu-R', '', '/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf', uni=True)
-        self.pdf.add_font('Ubuntu-B', '', '/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf', uni=True)
+        self.pdf.add_font('Ubuntu-R', '', '/home/powerbox/.fonts/ubuntu/Ubuntu-R.ttf', uni=True)
+        self.pdf.add_font('Ubuntu-B', '', '/home/powerbox/.fonts/ubuntu/Ubuntu-B.ttf', uni=True)
 
         # Define style
         self.pdf.set_font('Ubuntu-R', '', 16)
@@ -263,14 +263,14 @@ class PDF(FPDF):
         self.image(Paths.PATH_LOGO_RF_SMALL, x=16, y=5, w=70)
         self.set_draw_color(255, 255, 255)
         #Add custom font
-        self.add_font('Ubuntu-L', '', '/usr/share/fonts/truetype/ubuntu/Ubuntu-L.ttf', uni=True)
+        self.add_font('Ubuntu-L', '', '/home/powerbox/.fonts/ubuntu/Ubuntu-L.ttf', uni=True)
         #Add headerbox
         self.set_font('Ubuntu-L', '', 7)
         self.cell(w=0, h=7, txt='', border=0, ln=1, align='C', fill=False)
 
     def footer(self):
         #Add custom font
-        self.add_font('Ubuntu-L', '', '/usr/share/fonts/truetype/ubuntu/Ubuntu-L.ttf', uni=True)
+        self.add_font('Ubuntu-L', '', '/home/powerbox/.fonts/ubuntu/Ubuntu-L.ttf', uni=True)
         #Add footerbox
         self.set_text_color(r=10, g=10, b=10)
         self.set_draw_color(255, 255, 255)
