@@ -39,6 +39,9 @@ class DataReader(threading.Thread):
         self.calibration_factor1 = 0
         self.calibration_factor2 = 0
 
+        # Initialise a port
+        self.port = None
+
         # Filter variables
         self.alpha = ApplicationSettings.ALPHA_VELOCITY_FILTER
 
@@ -60,8 +63,14 @@ class DataReader(threading.Thread):
         velocity_old = 0
 
         # Setup serial readout
-        self.port = serial.Serial('/dev/ttyACM0')
-        self.port.flushInput()
+        try:
+            self.port = serial.Serial('/dev/ttyACM0')
+            self.port.flushInput()
+        except Exception as e:
+            # Set the flag and stop the thread
+            self.EXCEPTION_NO_PERIPHERAL = True
+            self.stop()
+            return
 
         received_bytes = bytearray(12)
 
@@ -134,10 +143,10 @@ class DataReader(threading.Thread):
 
     def stop(self):
         self.stop_flag.set()
-        self.join()  # Wait for the thread to finish execution
 
         # Close the serial port connection
-        self.port.close()
+        if self.port is not None:
+            self.port.close()
 
         
     def get_data(self, n_users):

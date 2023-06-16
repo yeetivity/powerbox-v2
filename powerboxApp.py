@@ -199,7 +199,15 @@ class powerboxApplication(ctk.CTk):
         print("Succesfully stopped")
         if self.options['start_mode'] == 1:
             # If default start mode, save data to model
-            data = self.measuring_thread.get_data(self.options['n_users'])
+            try:
+                data = self.measuring_thread.get_data(self.options['n_users'])
+            except:
+                # Show dialog
+                self.fstack[-1].display_errormsg()
+                # Go home
+                self.home()
+                return
+
             # Create a box for the analysis threads
             self.analyser_threads = [None, None]
             for i in range(self.options['n_users']):
@@ -218,7 +226,7 @@ class powerboxApplication(ctk.CTk):
             self.home()
     
     def stop_measurement_thread(self):
-        if self.measuring_thread != None:
+        if self.measuring_thread is not None:
             self.measuring_thread.stop()
             print('Thread stopped')
 
