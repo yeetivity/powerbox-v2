@@ -196,6 +196,7 @@ class powerboxApplication(ctk.CTk):
     def stop_measurement(self):
         self.stop_measurement_thread() # Stops the thread
         
+        print("Succesfully stopped")
         if self.options['start_mode'] == 1:
             # If default start mode, save data to model
             data = self.measuring_thread.get_data(self.options['n_users'])
@@ -220,18 +221,6 @@ class powerboxApplication(ctk.CTk):
         if self.measuring_thread != None:
             self.measuring_thread.stop()
             print('Thread stopped')
-            try:
-                time.sleep(0.2)
-                self.measuring_thread.join()
-                time.sleep(0.2)
-                print('Thread closed')
-            except Exception as e:
-                # Print the details of the exception
-                print("Exception details:")
-                print("Type:", type(e).__name__)
-                print("Message:", e)
-                print("Traceback:")
-                traceback.print_tb(e.__traceback__)
 
     def get_users(self, filter1=None, filter2=None):
         return self.db.get_users(filter1, filter2)

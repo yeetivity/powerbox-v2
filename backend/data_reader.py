@@ -4,8 +4,9 @@ Sends out regular data updates to the UI
 Runs on its own thread
 
 Author: Jitse van Esch
-Date: 24-03-23
+Date: 16-06-23
 """
+
 import serial, struct
 import time as t
 import numpy as np
@@ -59,14 +60,20 @@ class DataReader(threading.Thread):
         velocity_old = 0
 
         # Setup serial readout
-        port = serial.Serial('/dev/ttyACM0')
-        port.flushInput()
+        self.port = serial.Serial('/dev/ttyACM0')
+        self.port.flushInput()
 
         received_bytes = bytearray(12)
 
         while not self.stop_flag.is_set():
             # Read the received bytes into the bytearray
-            port.readinto(received_bytes)
+            try:
+                self.port.readinto(received_bytes)
+            except serial.SerialException:
+                # Set the flag and stop the thread
+                self.EXCEPTION_NO_DATA = True
+                self.stop()
+                return
 
             # Extract the force and velocity values
             velocity, self.force1, self.force2 = struct.unpack_from('fff', received_bytes)
@@ -111,8 +118,6 @@ class DataReader(threading.Thread):
                     self.update_ui_vars_1p(self.combinedforces, velocity, self.peakforce, self.meanforce)
                 else:
                     self.update_ui_vars_2p(self.force1, self.force2, velocity, self.peakforce)
-                    
-            # t.sleep(ApplicationSettings.SLEEP_TIME)
 
     def update_ui_time(self, packet_time):
         self.ui.display_time(packet_time)
@@ -129,6 +134,11 @@ class DataReader(threading.Thread):
 
     def stop(self):
         self.stop_flag.set()
+        self.join()  # Wait for the thread to finish execution
+
+        # Close the serial port connection
+        self.port.close()
+
         
     def get_data(self, n_users):
         """ Method to receive data saved in the class """
@@ -140,23 +150,6 @@ class DataReader(threading.Thread):
             powers2 = [force * 9.81 * abs(velocity) for force, velocity in zip(self.data['forces2'], self.velocities)]
             return ((self.data['forces1'], self.data['velocities'], powers1, self.data['times']),
                     (self.data['forces2'], self.data['velocities'], powers2, self.data['times']))
-
-    def generate_random(self, n_users):
-        if n_users == 1:
-            if random.random() < 0.5:
-                force1 = random.random() * 10
-                force2 = 0
-                velocity = random.random() * 10
-            else:
-                force2 = random.random() * 10
-                force1 = 0
-                velocity = -1 * random.random() * 10
-        else:
-            force1 = random.random() * 10
-            force2 = random.random() * 10
-            velocity = random.random() * 10
-
-        return force1, force2, velocity
     
     def calibrate(self):
         self.calibration_factor1 = self.force1
