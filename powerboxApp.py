@@ -216,11 +216,17 @@ class powerboxApplication(ctk.CTk):
             # If default start mode, save data to model
             try:
                 data = self.measuring_thread.get_data(self.options['n_users'])
+
+                deque1 = data[0][0]
+                deque2 = data[0][1]
+                deque3 = data[0][3]
+                my_list = data[0][2]
+                if (all(not d and not my_list for d in [deque1, deque2, deque3])):
+                    # Lists are empty
+                    self.show_msr_error()
+                    return
             except:
-                # Show dialog
-                self.fstack[-1].display_errormsg()
-                # Go home
-                self.home()
+                self.show_msr_error()
                 return
 
             # Create a box for the analysis threads
@@ -240,6 +246,13 @@ class powerboxApplication(ctk.CTk):
             # Quickstart mode, don't save or analyse data
             self.home()
     
+    def show_msr_error(self):
+        # Show dialog
+        self.fstack[-1].display_errormsg()
+        # Go home
+        self.home()
+
+
     def stop_measurement_thread(self):
         if self.measuring_thread is not None:
             self.measuring_thread.stop()
