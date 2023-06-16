@@ -1,0 +1,13 @@
+# All directory paths in this file will be ignored by git
+
+# Virtual environment (computer specific)
+./venv/
+
+# Local storage
+./storage/
+
+# Possible python caches
+**/__pycache__/
+
+# vscode uniques
+./.vscode/
