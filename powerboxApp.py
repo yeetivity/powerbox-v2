@@ -3,14 +3,11 @@
 This file is the main controller of the powerBox-v2 application
 All frontend is built with Gtk4, a gnome linux GUI framework
 
-Date last checked: 24-03-23
+Date last checked: 16-06-23
 Author: Jitse van Esch
 """
-# Framework imports
 import tkinter as tk
 import customtkinter as ctk
-
-# Functionality imports
 from collections.abc import MutableMapping
 from collections import deque
 import copy
@@ -19,7 +16,6 @@ import time
 import csv
 import numpy as np
 
-# Frontend imports
 import frontend.home
 import frontend.result_view
 from frontend.result_view import ResultView
@@ -29,7 +25,6 @@ import frontend.user_view
 import frontend.user_create
 import frontend.user_select
 
-# Backend imports
 from backend.database import Database
 from backend.model import Model
 from backend.data_analyser import DataAnalyser
@@ -37,21 +32,21 @@ from backend.data_reader import DataReader
 from backend.email_generator import EmailGenerator 
 from backend.pdf_generator import PDFGenerator
 
-# Settings imports
 from settings import ApplicationSettings
 from settings import Paths
 
+
 class powerboxApplication(ctk.CTk):
-    # Root window
     def __init__(self):
         super().__init__()
 
-        # Initialisations      
+        # Initialise database, email generator, data anlyser, and PDF generator
         self.db = Database(Paths.PATH_DATABASE)
         self.email_generator = EmailGenerator()
         self.analyser = DataAnalyser()
         self.pdf_generator = PDFGenerator()
 
+        # Initialise instance variables
         self.fstack = []  # Stack of loaded frames
         self.options = OptionDict({'n_users': 1, 
                         'start_mode': 1, 
@@ -59,98 +54,118 @@ class powerboxApplication(ctk.CTk):
                         'creating':False})  # run options for the application
         self.options.register_callback('n_users', self.n_users_callback)
         
-        # Container for loading frames
+        # Create main container
         self.container = tk.Frame(self) #Todo: See if this needs to be ctk
         self.container.pack(side='top', fill='both', expand=True)
         
         self.container.grid_rowconfigure(0, weight=1)
         self.container.grid_columnconfigure(0, weight=1)
 
-        # Load home
-        self.home()
+        self.home()  # Start with the home screen
         return
 
     def n_users_callback(self, key, value):
+        # Check if the key is 'n_users'
         if key != 'n_users':
             return
+
+        # Check the value of 'n_users'
+        # If the value is 1 and the second model exists, delete the second model
         if value == 1 and self.models[1] != None:
-            # Single user mode, but the second model still exists
             del self.models[1]
             self.models.append(None)
+        # If the value is 2 and the second model does not exist, create a copy of the first model and assign it to the second model
         elif value == 2 and self.models[1] == None:
-            # Double user mode, but second model doesn't exist
             self.models[1] = copy.copy(self.models[0])
-        return
+
             
     def home(self):
-        """ Method that loads home frame and clears the session data """
-
-        # Destroy all frames in stack
+        # Destroy and clear all frames in the stack
         for f in self.fstack:
             f.destroy()
 
-        # Clear stack
         self.fstack.clear()
 
-        # Reinitialize
+        # Reinitialize the models list
         self.models = [Model(), None]
+
+        # Set the options to default values
         self.options['for_measurement'] = True
         self.options['creating'] = False
 
-        # Show home
+        # Show the home screen
         self.show(frontend.home.Home)
-        return
     
     def show(self, frame):
         """
-        Method that loads frame and moves it to the top of the stack
-        
-        =INPUT=
-        frame   tk.Frame inherited class
+        Method that loads a frame and moves it to the top of the stack
+
+        Args:
+            frame (tk.Frame): A tk.Frame inherited class representing the frame to be displayed
+
+        Returns:
+            None
         """
 
-        # Create frame instance in the container, and pass the controller
+        # Create an instance of the frame within the container and pass the controller
         f = frame(self.container, self)
 
-        # Add frame to the stack
+        # Add the frame to the stack
         self.fstack.append(f)
 
-        # Display frame
-        f.grid(row=0, column=0, sticky='nsew')  # Sticky: makes frame stick to all sides
+        # Display the frame
+        f.grid(row=0, column=0, sticky='nsew')  # Sticky: makes the frame stick to all sides
         f.tkraise()
-        return
+
 
     def back(self):
-        """ Method to go back to the previous frame """
-        # Display previous frame
+        """
+        Method to go back to the previous frame
+        """
+
+        # Display the previous frame
         f = self.fstack[-2]
         f.tkraise()
 
-        # Destroy old frame
+        # Destroy the old frame
         self.fstack[-1].destroy()
 
-        # Take frame out of the stack
+        # Remove the frame from the stack
         self.fstack.pop()
-        return
 
     def goto_userselect(self):
+        """
+        Method to navigate to the userselect screen
+        """
+
         # Show the userselect screen
         self.show(frontend.user_select.UserSelect)
+
         # Show the users
         self.fstack[-1].update_userlist(self.get_users())
+
         print('goto_userselect')
+
         
     def goto_usercreate(self):
+        """
+        Method to navigate to the usercreate screen
+        """
+
+        # Show the usercreate screen
         self.show(frontend.user_create.UserCreate)
-        
+
+        # Check if it's for measurement and not already in creating mode
         if self.options['for_measurement'] and not self.options['creating']:
             userdetails = []
             for i in range(self.options['n_users']):
                 userdetails.append(self.models[i].get_userdetails())
-            # Get userdetails from model
+
+            # Get userdetails from model and configure UI
             self.fstack[-1].configure_UI(userdetails)
-        # Fill out userdetails
+            
         print('goto_usercreate')
+
 
     def goto_userview(self, userID):
         self.show(frontend.user_view.UserView)
