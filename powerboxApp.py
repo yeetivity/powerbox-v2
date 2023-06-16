@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+import os 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_dir)
+
 """
 This file is the main controller of the powerBox-v2 application
 All frontend is built with Gtk4, a gnome linux GUI framework
